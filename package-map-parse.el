@@ -1,6 +1,33 @@
-;; Go through all files using projectile and retrieve top level definitions and their positions
-;; then determine which functions are called by which others.
+;;; package-map-parse.el --- Uses projectile to construct a hashtable of definitions -*- lexical-binding: t; -*-
 
+;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
+
+;; Author: Mehmet Tekman
+;; URL: https://github.com/mtekman/remind-bindings.el
+;; Keywords: outlines
+;; Package-Requires: ((emacs "26.1") (projectile "2.2.0-snapshot"))
+;; Version: 0.1
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;;; Commentary:
+
+;; Go through all files using projectile and retrieve top level
+;; definitions and their positions then determine which functions
+;; are called by which others.
+
+
+;;; Code:
 (require 'paren)
 
 (defun getsourcefiles ()
@@ -49,7 +76,7 @@ variable names as keys as well as type and bounds as values."
       (alltopdefs-file pfile hashtable))))
 
 (defun allsecondarydefs-file (file hashtable)
-  "Get all secondary definitions in FILE for the
+  "Get all secondary definitions in FILE for each of the
 top-level definitions in HASHTABLE."
   (let ((linelist nil))
     (maphash
@@ -66,7 +93,7 @@ top-level definitions in HASHTABLE."
        (lambda (vname type-bounds-info)
          (goto-char 0)
          (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
-               (mentionlist nil))
+               (mentionlst (plist-get type-bounds-info :mentions)))
            (while (search-forward-regexp vnam-regex nil t)
              (let ((lnum (line-number-at-pos)))
                ;; Find the calling function by checking the line list
@@ -76,11 +103,9 @@ top-level definitions in HASHTABLE."
                        (lend (nth 1 lelm)))
                    (if (<= lbeg lnum lend)
                        ;; update entry to add
-                       (let* ((hashval type-bounds-info))
-                              (mention (plist-get hashval :mentions)))
-                         (cl-pushnew name mention)
-                         (setf hashval mention)))))))))))) ;; -- needed, or implicit?
-
+                       (cl-pushnew name mentionlst))))))
+           (plist-put type-bounds-info :mentions mentionlst)))
+       hashtable))))
 
 
 (defun allsecondarydefs-filelist (filelist hashtable)
@@ -89,8 +114,13 @@ for the top-level definitions in HASHTABLE."
   (dolist (pfile filelist hashtable)
     (allsecondarydefs-file pfile hashtable)))
 
-(defun populate-project ()
-  "Project."
-  (let ((proj-files (getsourcefiles))
-        (hash-table (alltopdefs-filelist proj-files)))
-    (allsecondarydefs-filelist proj-files hash-table)))
+(defun generatemap ()
+  "Generate a map of toplevel function and variable definitions in 
+a project, "
+  (let* ((proj-files (getsourcefiles))
+         (hash-table (alltopdefs-filelist proj-files)))
+    (allsecondarydefs-filelist proj-files hash-table)
+    hash-table))
+
+(provide 'package-map-parse)
+;;; package-map-parse.el ends here
