@@ -41,7 +41,7 @@
           (car func)))))
 
 (defun makesortedlinelist (hashtable)
-  "Make an ascending list of the start and end positions of all functions."
+  "Make an ascending list of the start and end positions of all functions from HASHTABLE."
   (let ((funcsbylinenum nil))
     (maphash
      (lambda (nam vals)
@@ -54,8 +54,7 @@
     (--sort (< (car it) (car other)) funcsbylinenum)))
 
 (defun updatementionslist (vname annotations asclist)
-  "Update mentions list from ANNOTATIONS for variable VNAME
-by checking in ASCLIST of line numbers for function bounds."
+  "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
   (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
         (mentionlst (plist-get annotations :mentions))
         (vnam-line (plist-get annotations :line-beg)))

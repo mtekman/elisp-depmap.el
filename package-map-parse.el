@@ -70,15 +70,13 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
       hashdefs)))
 
 (defun alltopdefs-filelist (filelist)
-  "Get all top definitions from FILELIST and return a hashtable, with
-variable names as keys as well as type and bounds as values."
+  "Get all top definitions from FILELIST and return a hashtable, with variable names as keys as well as type and bounds as values."
   (let ((hashtable (make-hash-table :size 1000)))
     (dolist (pfile filelist hashtable)
       (alltopdefs-file pfile hashtable))))
 
 (defun allsecondarydefs-file (file hashtable)
-  "Get all secondary definitions in FILE for each of the
-top-level definitions in HASHTABLE."
+  "Get all secondary definitions in FILE for each of the top level definitions in HASHTABLE."
   (let ((funcs-by-line-asc (makesortedlinelist hashtable)))
     ;; -- Check each top def in the buffer
     (with-current-buffer (find-file-noselect file)
@@ -90,14 +88,12 @@ top-level definitions in HASHTABLE."
        hashtable))))
 
 (defun allsecondarydefs-filelist (filelist hashtable)
-  "Get all secondary definitions for all files in FILELIST
-for the top-level definitions in HASHTABLE."
+  "Get all secondary definitions for all files in FILELIST for the top level definitions in HASHTABLE."
   (dolist (pfile filelist hashtable)
     (allsecondarydefs-file pfile hashtable)))
 
 (defun generatemap ()
-  "Generate a map of toplevel function and variable definitions in
-a project, "
+  "Generate a map of toplevel function and variable definitions in a project."
   (let* ((proj-files (getsourcefiles))
          (hash-table (alltopdefs-filelist proj-files)))
     (allsecondarydefs-filelist proj-files hash-table)
