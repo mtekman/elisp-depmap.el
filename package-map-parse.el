@@ -29,6 +29,7 @@
 
 ;;; Code:
 (require 'paren)
+(provide 'package-map-secondhelp)
 
 (defun getsourcefiles ()
   "Find all source files from the current project."
@@ -74,51 +75,6 @@ variable names as keys as well as type and bounds as values."
   (let ((hashtable (make-hash-table :size 1000)))
     (dolist (pfile filelist hashtable)
       (alltopdefs-file pfile hashtable))))
-
-(defun calling-func-atline (lnum list-asc)
-  "Retrieve the function name in LIST-ASC at LNUM bisects."
-  (let ((func nil))
-    (dolist (elm list-asc)
-      (let ((func-lbeg (1+ (nth 0 elm)))
-            (func-lend (nth 1 elm))
-            (func-name (nth 2 elm)))
-        (if (<= func-lbeg lnum func-lend)
-            (cl-pushnew func-name func))))
-    (if func
-        (if (> 1 (length func))
-            (error "Multiple functions at line... %d: %s" lnum func)
-          (car func)))))
-
-(defun makesortedlinelist (hashtable)
-  "Make an ascending list of the start and end positions of all functions."
-  (let ((funcsbylinenum nil))
-    (maphash
-     (lambda (nam vals)
-       (let ((lbeg (plist-get vals :line-beg))
-             (lend (plist-get vals :line-end)))
-         ;; We only want functions (those with a lend)
-         (if lend
-             (cl-pushnew `(,lbeg ,lend ,nam) funcsbylinenum))))
-     hashtable)
-    (--sort (< (car it) (car other)) funcsbylinenum)))
-
-(defun updatementionslist (vname annotations asclist)
-  "Update mentions list from ANNOTATIONS for variable VNAME
-by checking in ASCLIST of line numbers for function bounds."
-  (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
-        (mentionlst (plist-get annotations :mentions))
-        (vnam-line (plist-get annotations :line-beg)))
-    (goto-char 0)
-    (while (search-forward-regexp vnam-regex nil t)
-      (let ((lnum (line-number-at-pos)))
-        (unless (eq lnum vnam-line)
-          (let ((called-func (calling-func-atline
-                              lnum
-                              asclist)))
-            (if called-func
-                (cl-pushnew called-func mentionlst))))))
-    ;; swap updated mentionlst
-    (plist-put annotations :mentions mentionlst)))
 
 (defun allsecondarydefs-file (file hashtable)
   "Get all secondary definitions in FILE for each of the

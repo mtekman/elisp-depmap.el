@@ -25,7 +25,6 @@
 ;;; Code:
 (require 'package-map-parse)
 
-
 (let ((hashtable (generatemap)))
   (with-current-buffer (find-file "graphviz2.dot")
     (erase-buffer)
@@ -55,9 +54,6 @@
 ;;  -- height (size of function), label (vname), color (file)
 ;; [edge]
 ;;  --
-
-
-
 
 
 (provide 'package-map)
