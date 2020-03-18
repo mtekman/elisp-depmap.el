@@ -64,7 +64,7 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                   (goto-char keybl)
                   (setq lnum-end (line-number-at-pos))))
               (puthash vnam-nam
-                       `(:type ,type-nam :line-beg ,lnum-beg :line-end ,lnum-end :mentions nil)
+                       `(:type ,type-nam :line-beg ,lnum-beg :line-end ,lnum-end :file ,file :mentions nil)
                        hashdefs)))))
       hashdefs)))
 
@@ -75,38 +75,63 @@ variable names as keys as well as type and bounds as values."
     (dolist (pfile filelist hashtable)
       (alltopdefs-file pfile hashtable))))
 
-(defun allsecondarydefs-file (file hashtable)
-  "Get all secondary definitions in FILE for each of the
-top-level definitions in HASHTABLE."
-  (let ((linelist nil))
+(defun calling-func-atline (lnum list-asc)
+  "Retrieve the function name in LIST-ASC at LNUM bisects."
+  (let ((func nil))
+    (dolist (elm list-asc)
+      (let ((func-lbeg (1+ (nth 0 elm)))
+            (func-lend (nth 1 elm))
+            (func-name (nth 2 elm)))
+        (if (<= func-lbeg lnum func-lend)
+            (cl-pushnew func-name func))))
+    (if func
+        (if (> 1 (length func))
+            (error "Multiple functions at line... %d: %s" lnum func)
+          (car func)))))
+
+(defun makesortedlinelist (hashtable)
+  "Make an ascending list of the start and end positions of all functions."
+  (let ((funcsbylinenum nil))
     (maphash
      (lambda (nam vals)
        (let ((lbeg (plist-get vals :line-beg))
              (lend (plist-get vals :line-end)))
-         ;; -- functions only
+         ;; We only want functions (those with a lend)
          (if lend
-             (cl-pushnew `(,lbeg ,lend ,nam) linelist))))
+             (cl-pushnew `(,lbeg ,lend ,nam) funcsbylinenum))))
      hashtable)
+    (--sort (< (car it) (car other)) funcsbylinenum)))
+
+(defun updatementionslist (vname annotations asclist)
+  "Update mentions list from ANNOTATIONS for variable VNAME
+by checking in ASCLIST of line numbers for function bounds."
+  (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
+        (mentionlst (plist-get annotations :mentions))
+        (vnam-line (plist-get annotations :line-beg)))
+    (goto-char 0)
+    (while (search-forward-regexp vnam-regex nil t)
+      (let ((lnum (line-number-at-pos)))
+        (unless (eq lnum vnam-line)
+          (let ((called-func (calling-func-atline
+                              lnum
+                              asclist)))
+            (if called-func
+                (cl-pushnew called-func mentionlst))))))
+    ;; swap updated mentionlst
+    (plist-put annotations :mentions mentionlst)))
+
+(defun allsecondarydefs-file (file hashtable)
+  "Get all secondary definitions in FILE for each of the
+top-level definitions in HASHTABLE."
+  (let ((funcs-by-line-asc (makesortedlinelist hashtable)))
     ;; -- Check each top def in the buffer
     (with-current-buffer (find-file-noselect file)
-      (maphash  ;; iterate hashtable
-       (lambda (vname type-bounds-info)
-         (goto-char 0)
-         (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
-               (mentionlst (plist-get type-bounds-info :mentions)))
-           (while (search-forward-regexp vnam-regex nil t)
-             (let ((lnum (line-number-at-pos)))
-               ;; Find the calling function by checking the line list
-               (dolist (lelm linelist)
-                 (let ((name (nth 2 lelm))
-                       (lbeg (nth 0 lelm))
-                       (lend (nth 1 lelm)))
-                   (if (<= lbeg lnum lend)
-                       ;; update entry to add
-                       (cl-pushnew name mentionlst))))))
-           (plist-put type-bounds-info :mentions mentionlst)))
+      (maphash   ;; iterate hashtable
+       (lambda (vname annotations)
+         (updatementionslist vname
+                             annotations
+                             funcs-by-line-asc))
        hashtable))))
-
 
 (defun allsecondarydefs-filelist (filelist hashtable)
   "Get all secondary definitions for all files in FILELIST
@@ -115,7 +140,7 @@ for the top-level definitions in HASHTABLE."
     (allsecondarydefs-file pfile hashtable)))
 
 (defun generatemap ()
-  "Generate a map of toplevel function and variable definitions in 
+  "Generate a map of toplevel function and variable definitions in
 a project, "
   (let* ((proj-files (getsourcefiles))
          (hash-table (alltopdefs-filelist proj-files)))

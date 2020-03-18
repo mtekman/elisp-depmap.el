@@ -1,88 +1,64 @@
+;;; package-map.el --- Generate a graphviz map of functions and definitions -*- lexical-binding: t; -*-
 
-(require 'projectile)
+;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
-(defvar varprefix "(\\(def\\(var\\|un\\|subst\\)\\|setq\\) ")
-(defvar varfullix "\\(\(setq\|\(def\(un\|var\|subst\)\)\) \(-?\\w+\)+")
+;; Author: Mehmet Tekman
+;; URL: https://github.com/mtekman/remind-bindings.el
+;; Keywords: outlines
+;; Package-Requires: ((emacs "26.1") (projectile "2.2.0-snapshot"))
+;; Version: 0.1
 
-(defmacro processline (nachcolon &rest rest)
-  "Process a line, extract values between colons, and search for NACHCOLON
-immediately after second colon, then perform REST."
-  `(let ((bound (line-end-position))
-         (bfunc #'buffer-substring-no-properties))
-     (let* ((p2 (search-forward ":" bound t))
-            (p3 (search-forward ":" bound t)))
-       (when p3
-         (let ((filename (funcall
-                          bfunc (line-beginning-position) (1- p2)))
-               (linenumb (funcall bfunc p2 (1- p3)))
-               (nextchar (funcall bfunc p3 (1+ p3))))
-           (unless (or (string-prefix-p "Ripgrep finished" filename)
-                       (string= ,nachcolon nextchar))
-             ,@rest))))))
+;;; License:
 
-(defun process-this-line ()
-  "Parse the current line in the ripgrep buffer to extract definitions.
-Specifically the filename, linenumber, and variable name."
-  (save-excursion
-    (processline
-     " "
-     (let* ((m0 (search-forward-regexp varprefix bound t))
-            (m1 (point))
-            (m2 (search-forward-regexp
-                 "\\( \\|)\\|$\\)" nil t))
-            (vartype (funcall bfunc (1+ p3) (1- m0)))
-            (varname (funcall bfunc m1 (1- m2))))
-       `(,varname ,vartype ,linenumb ,filename)))))
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;;; Commentary:
+
+;;; Code:
+(require 'package-map-parse)
 
 
-(defun getcrossrefs-forvar (vname)
-  "Get all references to toplevel definition VNAME."
-  (let ((rmapp nil)
-        (rbuff (projectile-ripgrep vname t)))
-    (with-current-buffer rbuff
-      (goto-line 4)
-      (while (search-forward "\n" nil t)
-        (processline
-         "("
-         ;; we have a gap where our vname should follow
-         (if (search-forward vname bound t)
-             ;; return the parent function, or filename
-             (add-to-list
-              'rmapp
-              (or '(getparentfunc filename linenumb) filename))))))))
+(let ((hashtable (generatemap)))
+  (with-current-buffer (find-file "graphviz2.dot")
+    (erase-buffer)
+    (insert "strict graph {\n")
+    (maphash
+     (lambda (funcname info)
+       (let ((vfile (plist-get info :file))
+             (vbegs (plist-get info :line-beg))
+             (vends (plist-get info :line-end))
+             (vtype (plist-get info :type))
+             (vment (plist-get info :mentions)))
+         (dolist (funcmentinfo vment)
+           (let ((funcment (nth 0 funcmentinfo))
+                 (funcline (nth 1 funcmentinfo)))
+             (insert (format "    \"%s\" -- \"%s:%d\"\n"
+                             funcname funcment funcline))))))
+     hashtable)
+    (insert "}\n")))
 
 
-(setq topdefs nil)
-(setq grepbuffer nil)
 
-(defun killall-grep-buffers ()
-  (dolist
-      (buff (--filter
-             (string-prefix-p
-              "*grep"
-              (buffer-name it))
-             (buffer-list)))
-    (kill-buffer buff))
-  (kill-buffer "*Backtrace*"))
+;; Logic:
+;; -- if there is more than 1 file, then create several columns.
+;; -- if only 1 file, more free for all approach.
 
-(defun processdefinitions ()
-  "Grab all definitions in a project, and process cross references."
-  (add-hook 'projectile-grep-finished-hook 'processdefinitions-delegate)
-  (let ((nowbuff (current-buffer))
-        (pbuffer (projectile-grep
-                  "(\\(setq\\|\\(def\\(un\\|var\\|subst\\)\\)\\)\ " nil)))
-    (setq grepbuffer pbuffer)
-    (switch-to-buffer nowbuff)))
+;; [node]
+;;  -- height (size of function), label (vname), color (file)
+;; [edge]
+;;  --
 
-(defun processdefinitions-delegate ()
-  (let ((bname grepbuffer))
-    (with-current-buffer bname
-      (goto-line 4)
-      (while (search-forward "\n" nil t)
-        (let* ((vdefs (process-this-line))
-               (vnams (car vdefs))
-               ;;(xrefs (getcrossrefs-forvar vnams))
-               )
-          (add-to-list 'topdefs `(,vdefs xrefs))))
-      (killall-grep-buffers)
-      (remove-hook 'ripgrep-search-finished-hook 'processdefinitions-delegate))))
+
+
+
+
+(provide 'package-map)
+;;; package-map.el ends here
