@@ -25,24 +25,27 @@
 ;;; Code:
 (require 'package-map-parse)
 
-(let ((hashtable (generatemap)))
-  (with-current-buffer (find-file "graphviz2.dot")
-    (erase-buffer)
-    (insert "strict graph {\n")
-    (maphash
-     (lambda (funcname info)
-       (let ((vfile (plist-get info :file))
-             (vbegs (plist-get info :line-beg))
-             (vends (plist-get info :line-end))
-             (vtype (plist-get info :type))
-             (vment (plist-get info :mentions)))
-         (dolist (funcmentinfo vment)
-           (let ((funcment (nth 0 funcmentinfo))
-                 (funcline (nth 1 funcmentinfo)))
-             (insert (format "    \"%s\" -- \"%s:%d\"\n"
-                             funcname funcment funcline))))))
-     hashtable)
-    (insert "}\n")))
+
+(defun makesummarytable ()
+  (let ((hashtable (generatemap)))
+    (with-current-buffer (find-file "graphviz2.org")
+      (erase-buffer)
+      (insert "| Type | Name | File | #Lines | #Mentions | Mentions |\n|--\n")
+      (maphash
+       (lambda (funcname info)
+         (let ((vfile (plist-get info :file))
+               (vbegs (plist-get info :line-beg))
+               (vends (plist-get info :line-end))
+               (vtype (plist-get info :type))
+               (vment (plist-get info :mentions)))
+           (insert
+            (format "| %s | %s | %s | %d | %d | %s |\n"
+                    vtype funcname vfile
+                    (if vends (- vends vbegs) 1)
+                    (length vment)
+                    vment))))
+       hashtable)
+      (org-table-align))))
 
 
 

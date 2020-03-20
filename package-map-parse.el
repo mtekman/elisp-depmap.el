@@ -65,7 +65,13 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                   (goto-char keybl)
                   (setq lnum-end (line-number-at-pos))))
               (puthash vnam-nam
-                       `(:type ,type-nam :line-beg ,lnum-beg :line-end ,lnum-end :file ,file :mentions nil)
+                       `(:type ,type-nam
+                               :line-beg ,lnum-beg
+                               :line-end ,lnum-end
+                               :file ,file
+                               ;; when mentions is nil, somehow all entries in
+                               ;; the hash table point to the same mentions.
+                               :mentions (,vnam-nam))
                        hashdefs)))))
       hashdefs)))
 
