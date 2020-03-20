@@ -82,9 +82,7 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
     (with-current-buffer (find-file-noselect file)
       (maphash   ;; iterate hashtable
        (lambda (vname annotations)
-         (updatementionslist vname
-                             annotations
-                             funcs-by-line-asc))
+         (updatementionslist vname annotations funcs-by-line-asc))
        hashtable))))
 
 (defun allsecondarydefs-filelist (filelist hashtable)

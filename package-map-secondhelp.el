@@ -53,7 +53,7 @@
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
 
-(defun updatementionslist (vname annotations asclist)
+(defun updatementionslist (vname annotations funcs-by-line-asc)
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
   (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
         (mentionlst (plist-get annotations :mentions))
@@ -62,12 +62,9 @@
     (while (search-forward-regexp vnam-regex nil t)
       (let ((lnum (line-number-at-pos)))
         (unless (eq lnum vnam-line)
-          (let ((called-func (calling-func-atline
-                              lnum
-                              asclist)))
+          (let ((called-func (calling-func-atline lnum funcs-by-line-asc)))
             (if called-func
                 (cl-pushnew called-func mentionlst))))))
-    ;; swap updated mentionlst
     (plist-put annotations :mentions mentionlst)))
 
 (provide 'package-map-secondhelp)
