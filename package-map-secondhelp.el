@@ -22,11 +22,13 @@
 
 ;;; Commentary:
 
+;; See package-map.el
 
 ;;; Code:
 (require 'cl-lib)
+(require 'dash)
 
-(defun calling-func-atline (lnum list-asc)
+(defun package-map-secondhelp--callingfuncatline (lnum list-asc)
   "Retrieve the function name in LIST-ASC at LNUM bisects."
   (let ((func nil))
     (dolist (elm list-asc)
@@ -40,7 +42,7 @@
             (error "Multiple functions at line... %d: %s" lnum func)
           (car func)))))
 
-(defun makesortedlinelist (hashtable)
+(defun package-map-secondhelp--makesortedlinelist (hashtable)
   "Make an ascending list of the start and end positions of all functions from HASHTABLE."
   (let ((funcsbylinenum nil))
     (maphash
@@ -52,8 +54,8 @@
              (cl-pushnew `(,lbeg ,lend ,nam) funcsbylinenum))))
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
+(defun package-map-secondhelp--updatementionslist (vname annotations funcs-by-line-asc)
 
-(defun updatementionslist (vname annotations funcs-by-line-asc)
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
   (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
         (mentionlst (plist-get annotations :mentions))
@@ -62,9 +64,9 @@
     (while (search-forward-regexp vnam-regex nil t)
       (let ((lnum (line-number-at-pos)))
         (unless (eq lnum vnam-line)
-          (let ((called-func (calling-func-atline lnum funcs-by-line-asc)))
+          (let ((called-func (package-map-secondhelp--callingfuncatline lnum funcs-by-line-asc)))
             (if called-func
-                (cl-pushnew called-func mentionlst))))))
+                (push called-func mentionlst))))))
     (plist-put annotations :mentions mentionlst)))
 
 (provide 'package-map-secondhelp)

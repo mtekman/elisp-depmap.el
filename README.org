@@ -1,0 +1,17 @@
+#+TITLE: package-map.el
+
+Generate a GraphViz-compatible DOT file representation of all the top-level definitions in a project, and represent the connections between them.
+
+The idea is that your code should be structured in an untangled way (i.e. split into standalone libraries contained within specific files), and this helps represent that.
+
+
+* Installation
+
+  #+begin_src 
+(use-package package-map.el)
+
+  #+end_src
+
+* Usage
+
+Just call =package-map-makedotfile= or =package-map-makesummarytable=.

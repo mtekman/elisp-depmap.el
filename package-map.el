@@ -22,15 +22,21 @@
 
 ;;; Commentary:
 
+;; TODO: - Label (interactive) when parsing.
+
 ;;; Code:
 (require 'package-map-parse)
+(require 'org-table)
+(require 'subr-x)
 
-
-(defun makesummarytable ()
-  (let ((hashtable (generatemap)))
+(defun package-map-makesummarytable ()
+  "Make a summary org table of variables and references to them."
+  (interactive)
+  (let ((hashtable (package-map-parse--generatemap)))
     (with-current-buffer (find-file "graphviz2.org")
       (erase-buffer)
-      (insert "| Type | Name | File | #Lines | #Mentions | Mentions |\n|--\n")
+      (insert "| Type | Name | File | #Lines |\
+ #Mentions | Mentions |\n|--\n")
       (maphash
        (lambda (funcname info)
          (let ((vfile (plist-get info :file))
@@ -48,41 +54,28 @@
       (org-table-align))))
 
 
+(defvar package-map-colors-available
+  '(red blue green orange purple gray yellow pink brown navy maroon violet))
 
-(defun getcolors (hashtable accesskey1 &optional accesskey2)
-  "Get a list of colors."
-  (let ((uniqkeys nil)
-        (colors '("red" "blue" "green" "orange" "purple" "gray" "yellow" "pink")))
-    (maphash
-     (lambda (key annot)
-       (let ((val (plist-get annot accesskey1)))
-         (cl-pushnew val uniqkeys)))
-     hashtable)
-    (let ((numvals (length uniqkeys)))
-      (cl-subseq tmpcol 0 numvals))))
+(defun package-map--makecolormap (hashtable)
+  "From the HASHTABLE make a color map of files."
+  (let ((colors package-map-colors-available)
+        (files-uniq (seq-uniq
+                     (--map (plist-get it :file)
+                            (hash-table-values
+                             hashtable)))))
+    (--map (let ((colr (nth it colors))
+                 (file (nth it files-uniq)))
+             `(,file . ,colr))
+           (number-sequence 0 (1- (length files-uniq))))))
 
-
-(defun getshape (hashtable accesskey1 &optional accesskey2)
-  "Get a list of shapes."
-  (
-  
-  (let ((uniqkeys nil)
-        (colors '("red" "blue" "green" "orange" "purple" "gray" "yellow" "pink")))
-    (maphash
-     (lambda (key annot)
-       (let ((val (plist-get annot accesskey1)))
-         (cl-pushnew val uniqkeys)))
-     hashtable)
-    (let ((numvals (length uniqkeys)))
-      (cl-subseq tmpcol 0 numvals))))
-
-
-(defun makedotfile ()
-  (let ((hashtable (generatemap)))
+(defun package-map-makedotfile ()
+  "Make a dot file representation of all the top level definitions in a project, and their references."
+  (interactive)
+  (let ((hashtable (package-map-parse--generatemap)))
     ;; TODO: implement these
-    (let ((list-colors (getcolors hashtable :file))
-          (list-height (getheights hashtable :line-beg :line-end))
-          (list-shapes (getshapes hashtable :type)))
+    (let ((colormap (package-map--makecolormap hashtable))
+          (shapemap package-map-parse-function-shapes))
       (with-current-buffer (find-file "graphviz2.dot")
         (erase-buffer)
         (insert "strict graph {\n")
@@ -94,12 +87,18 @@
                  (vtype (plist-get info :type))
                  (vment (plist-get info :mentions)))
              (let ((numlines (if vends (- vends vbegs) 1)))
-               (insert (format "  \"%s\" [height=%f]\n"
-                               funcname (1+ (/ numlines 10)))))
+               (insert
+                (format "  \"%s\" [height=%d,shape=%s,color=%s]\n"
+                        funcname
+                        (1+ (/ numlines 10))
+                        (alist-get (intern vtype) shapemap)
+                        (alist-get vfile colormap))))
              (dolist (mento vment)
                (unless (eq funcname mento)
-                 (insert (format "  \"%s\" -- \"%s\" [color=\"%s\"]\n"
-                                 funcname mento vfile))))))
+                 (insert
+                  (format "  \"%s\" -- \"%s\"\n"
+                          funcname
+                          mento))))))
          hashtable)
         (insert "}\n")))))
 

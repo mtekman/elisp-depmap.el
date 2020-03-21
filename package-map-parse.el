@@ -28,21 +28,41 @@
 
 
 ;;; Code:
+(require 'package-map-secondhelp)
+
 (require 'paren)
-(provide 'package-map-secondhelp)
+(require 'projectile)
 
-(defun getsourcefiles ()
+
+(defun package-map-parse--getsourcefiles()
   "Find all source files from the current project."
-  (let* ((project-root (projectile-project-root))
-         (project-files (projectile-project-files project-root)))
-    (--filter (string-suffix-p ".el" it) project-files)))
+  (-filter (lambda (it) (string-suffix-p ".el" it))
+           (directory-files (projectile-project-root))))
 
-(defun alltopdefs-file (file hashdefs)
+(defgroup package-map nil
+  "Main group for package-map package."
+  :group 'coding)
+
+(defcustom package-map-parse-function-shapes
+  '((setq . plaintext) (defvar . plain) (defcustom . cds) (defun . note) (defsubst . tab) (defmacro . trapezium))
+  "Define variables to look for and graphviz shapes."
+  :type 'list
+  :group 'package-map)
+
+
+(defsubst package-map-parse--generateregexfromalist (alist)
+  "From ALIST, get the car variables and put them in a regex.
+This will be used to scan all files for top level definitions."
+  (concat "^(\\("
+          (mapconcat (lambda (x) (format "%s" (car x)))
+                     alist "\\|") "\\)"))
+
+(defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use grep or projectile, because those sonuvabitch finish hooks are not reliable."
   (with-current-buffer (find-file-noselect file)
     (goto-char 0)
-    (let ((reg-type "^(\\(setq\\|\\(def\\(un\\|var\\|subst\\|custom\\)\\)\\)")
+    (let ((reg-type (package-map-parse--generateregexfromalist package-map-parse-function-shapes))
           (reg-vnam "\\(-?\\w+\\)+"))
       (while (search-forward-regexp reg-type nil t)
         ;; Get type
@@ -75,32 +95,35 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                        hashdefs)))))
       hashdefs)))
 
-(defun alltopdefs-filelist (filelist)
+(defun package-map-parse--alltopdefs-filelist (filelist)
   "Get all top definitions from FILELIST and return a hashtable, with variable names as keys as well as type and bounds as values."
   (let ((hashtable (make-hash-table :size 1000)))
     (dolist (pfile filelist hashtable)
-      (alltopdefs-file pfile hashtable))))
+      (package-map-parse--alltopdefs-file pfile hashtable))))
 
-(defun allsecondarydefs-file (file hashtable)
+(defun package-map-parse--allsecondarydefs-file (file hashtable)
   "Get all secondary definitions in FILE for each of the top level definitions in HASHTABLE."
-  (let ((funcs-by-line-asc (makesortedlinelist hashtable)))
+  (let ((funcs-by-line-asc (package-map-secondhelp--makesortedlinelist
+                            hashtable)))
     ;; -- Check each top def in the buffer
     (with-current-buffer (find-file-noselect file)
       (maphash   ;; iterate hashtable
        (lambda (vname annotations)
-         (updatementionslist vname annotations funcs-by-line-asc))
+         (package-map-secondhelp--updatementionslist vname
+                                                     annotations
+                                                     funcs-by-line-asc))
        hashtable))))
 
-(defun allsecondarydefs-filelist (filelist hashtable)
+(defun package-map-parse--allsecondarydefs-filelist (filelist hashtable)
   "Get all secondary definitions for all files in FILELIST for the top level definitions in HASHTABLE."
   (dolist (pfile filelist hashtable)
-    (allsecondarydefs-file pfile hashtable)))
+    (package-map-parse--allsecondarydefs-file pfile hashtable)))
 
-(defun generatemap ()
+(defun package-map-parse--generatemap ()
   "Generate a map of toplevel function and variable definitions in a project."
-  (let* ((proj-files (getsourcefiles))
-         (hash-table (alltopdefs-filelist proj-files)))
-    (allsecondarydefs-filelist proj-files hash-table)
+  (let* ((proj-files (package-map-parse--getsourcefiles))
+         (hash-table (package-map-parse--alltopdefs-filelist proj-files)))
+    (package-map-parse--allsecondarydefs-filelist proj-files hash-table)
     hash-table))
 
 (provide 'package-map-parse)
