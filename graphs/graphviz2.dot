@@ -1,0 +1,22 @@
+strict graph {
+  "package-map-parse" [height=1,shape=note,color=red]
+  "package-map-parse-function-shapes" [height=1,shape=cds,color=red]
+  "package-map-parse-function-shapes" -- "package-map-makedotfile"
+  "package-map-parse-function-shapes" -- "package-map-parse"
+  "package-map-parse" [height=1,shape=tab,color=red]
+  "package-map-parse" [height=4,shape=note,color=red]
+  "package-map-parse" [height=1,shape=note,color=red]
+  "package-map-parse" [height=2,shape=note,color=red]
+  "package-map-parse" [height=1,shape=note,color=red]
+  "package-map-parse" [height=1,shape=note,color=red]
+  "package-map-secondhelp" [height=2,shape=note,color=blue]
+  "package-map-secondhelp" [height=2,shape=note,color=blue]
+  "package-map-secondhelp" [height=2,shape=note,color=blue]
+  "package-map-makesummarytable" [height=3,shape=note,color=green]
+  "package-map-colors-available" [height=1,shape=plain,color=green]
+  "package-map-colors-available" -- "package-map-parse"
+  "package-map" [height=2,shape=note,color=green]
+  "package-map" -- "package-map-makesummarytable"
+  "package-map" -- "package-map-makesummarytable"
+  "package-map-makedotfile" [height=4,shape=note,color=green]
+}
