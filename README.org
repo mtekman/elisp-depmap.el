@@ -7,7 +7,7 @@ The idea is that your code should be structured in an untangled way (i.e. split 
 
 * Installation
 
-  #+begin_src 
+  #+begin_src
 (use-package package-map.el)
 
   #+end_src
@@ -15,3 +15,6 @@ The idea is that your code should be structured in an untangled way (i.e. split 
 * Usage
 
 Just call =package-map-makedotfile= or =package-map-makesummarytable=.
+
+* Things to Polish
+** TODO Discover why =generatemap= doesn't appear in =maketablesummary=
