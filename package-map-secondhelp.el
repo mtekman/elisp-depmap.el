@@ -28,6 +28,14 @@
 (require 'cl-lib)
 (require 'dash)
 
+(defsubst package-map-secondhelp--generateregexfromalist (alist)
+  "From ALIST, get the car variables and put them in a regex.
+This will be used to scan all files for top level definitions."
+  (concat "^(\\("
+          (mapconcat (lambda (x) (format "%s" (car x)))
+                     alist "\\|") "\\)"))
+
+
 (defun package-map-secondhelp--callingfuncatline (lnum list-asc)
   "Retrieve the function name in LIST-ASC at LNUM bisects."
   (let ((func nil))
@@ -54,10 +62,10 @@
              (cl-pushnew `(,lbeg ,lend ,nam) funcsbylinenum))))
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
-(defun package-map-secondhelp--updatementionslist (vname annotations funcs-by-line-asc)
 
+(defun package-map-secondhelp--updatementionslist (vname annotations funcs-by-line-asc)
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
-  (let ((vnam-regex (format "\\( \\|(\\)%s\\( \\|)\\)" vname))
+  (let ((vnam-regex (format "\\( \\|(\\|\\b\\)%s\\( \\|)\\|\\b\\)" vname))
         (mentionlst (plist-get annotations :mentions))
         (vnam-line (plist-get annotations :line-beg)))
     (goto-char 0)

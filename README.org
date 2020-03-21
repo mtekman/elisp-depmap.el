@@ -4,17 +4,15 @@ Generate a GraphViz-compatible DOT file representation of all the top-level defi
 
 The idea is that your code should be structured in an untangled way (i.e. split into standalone libraries contained within specific files), and this helps represent that.
 
+ #+HTML: <img src="graphs/graphviz2.png" />
 
 * Installation
 
   #+begin_src
 (use-package package-map.el)
-
   #+end_src
 
 * Usage
 
 Just call =package-map-makedotfile= or =package-map-makesummarytable=.
 
-* Things to Polish
-** TODO Discover why =generatemap= doesn't appear in =maketablesummary=

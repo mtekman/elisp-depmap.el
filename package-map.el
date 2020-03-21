@@ -69,6 +69,20 @@
              `(,file . ,colr))
            (number-sequence 0 (1- (length files-uniq))))))
 
+(defcustom package-map-stripprojectname t
+  "Strip the project name from the graph."
+  :type 'boolean
+  :group 'package-map)
+
+(defun package-map--newname (fname)
+  "Strip the projectname from FNAME."
+  (let* ((proot (projectile-project-name (projectile-project-root)))
+         (prool (car (split-string proot ".el")))
+         (pregx (format "^%s-" prool)))
+    (if package-map-stripprojectname
+        (replace-regexp-in-string pregx "§" fname)
+      fname)))
+
 (defun package-map-makedotfile ()
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
@@ -81,7 +95,8 @@
         (insert "strict graph {\n")
         (maphash
          (lambda (funcname info)
-           (let ((vfile (plist-get info :file))
+           (let ((oname (package-map--newname funcname))
+                 (vfile (plist-get info :file))
                  (vbegs (plist-get info :line-beg))
                  (vends (plist-get info :line-end))
                  (vtype (plist-get info :type))
@@ -89,7 +104,7 @@
              (let ((numlines (if vends (- vends vbegs) 1)))
                (insert
                 (format "  \"%s\" [height=%d,shape=%s,color=%s]\n"
-                        funcname
+                        oname
                         (1+ (/ numlines 10))
                         (alist-get (intern vtype) shapemap)
                         (alist-get vfile colormap))))
@@ -97,11 +112,10 @@
                (unless (eq funcname mento)
                  (insert
                   (format "  \"%s\" -- \"%s\"\n"
-                          funcname
-                          mento))))))
+                          oname
+                          (package-map--newname mento)))))))
          hashtable)
         (insert "}\n")))))
-
 
 
 ;; Logic:

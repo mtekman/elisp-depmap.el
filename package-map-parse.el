@@ -34,7 +34,7 @@
 (require 'projectile)
 
 
-(defun package-map-parse--getsourcefiles()
+(defun package-map-parse--getsourcefiles ()
   "Find all source files from the current project."
   (-filter (lambda (it) (string-suffix-p ".el" it))
            (directory-files (projectile-project-root))))
@@ -44,26 +44,19 @@
   :group 'coding)
 
 (defcustom package-map-parse-function-shapes
-  '((setq . plaintext) (defvar . plain) (defcustom . cds) (defun . note) (defsubst . tab) (defmacro . trapezium))
+  '((setq . plain) (defvar . plain) (defcustom . plain) (defun . note) (defsubst . tab) (defmacro . trapezium))
   "Define variables to look for and graphviz shapes."
   :type 'list
   :group 'package-map)
 
-
-(defsubst package-map-parse--generateregexfromalist (alist)
-  "From ALIST, get the car variables and put them in a regex.
-This will be used to scan all files for top level definitions."
-  (concat "^(\\("
-          (mapconcat (lambda (x) (format "%s" (car x)))
-                     alist "\\|") "\\)"))
 
 (defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use grep or projectile, because those sonuvabitch finish hooks are not reliable."
   (with-current-buffer (find-file-noselect file)
     (goto-char 0)
-    (let ((reg-type (package-map-parse--generateregexfromalist package-map-parse-function-shapes))
-          (reg-vnam "\\(-?\\w+\\)+"))
+    (let ((reg-type (package-map-secondhelp--generateregexfromalist package-map-parse-function-shapes)))
+      ;;(reg-vnam "\\(-*\\w+\\)+"))
       (while (search-forward-regexp reg-type nil t)
         ;; Get type
         (let* ((type-end (point))
@@ -73,7 +66,7 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
           (forward-whitespace 1)
           ;; Get variable name
           (let* ((vnam-beg (point))
-                 (vnam-end (search-forward-regexp reg-vnam))
+                 (vnam-end (progn (forward-whitespace 1) (forward-whitespace -1) (point)))
                  (vnam-nam (buffer-substring-no-properties vnam-beg vnam-end)))
             ;; Get bounds or line number
             (let ((lnum-beg (line-number-at-pos))
