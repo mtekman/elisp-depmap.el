@@ -88,6 +88,36 @@
       fname)))
 
 
+(defcustom package-map-dot-file "~/graphviz2.dot" ;
+  "Location of dot file. The output image file will use the prefix before the extension."
+  :type 'string
+  :group 'package-map)
+
+(defcustom package-map-dot-outext "png"
+  "Output file type"
+  :type 'string
+  :options '("png" "svg" "tiff" "jpeg" "eps" "json")
+  :group 'package-map)
+
+(defcustom package-map-dot-commandargs ""
+  "Other command line args"
+  :type 'string
+  :group 'package-map)
+
+(defun package-map-dot--executeandshow ()
+  "Execute the dotfile command and then show the graph."
+  (let* ((outfile (format "%s.%s"
+                         (car (split-string package-map-dot-file "\\."))
+                         package-map-dot-outext))
+         (outputf (shell-command-to-string
+                   (format "dot %s -T%s %s -o %s"
+                           package-map-dot-file
+                           package-map-dot-outext
+                           package-map-dot-commandargs
+                           outfile))))
+    (find-file-other-frame outfile)))
+
+
 (defun package-map-makedotfile ()
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
@@ -95,7 +125,7 @@
     ;; TODO: implement these
     (let ((colormap (package-map--makecolormap hashtable))
           (shapemap package-map-parse-function-shapes))
-      (with-current-buffer (find-file-noselect "graphviz2.dot")
+      (with-current-buffer (find-file-noselect package-map-dot-file)
         (erase-buffer)
         (insert "strict graph {\n")
         (maphash
@@ -122,25 +152,8 @@
                           (package-map--newname mento)))))))
          hashtable)
         (insert "}\n")
-        (save-buffer)))))
-
-
-;; digraph G {
-
-;; 	subgraph cluster_0 {
-;; 		style=filled;
-;; 		color=lightgrey;
-;; 		node [style=filled,color=white];
-;; 		a0 -> a1 -> a2 -> a3;
-;; 		label = "process #1";
-;; 	}
-
-;; 	subgraph cluster_1 {
-;; 		node [style=filled];
-;; 		b0 -> b1 -> b2 -> b3;
-;; 		label = "process #2";
-;; 		color=blue
-;; 	}
+        (save-buffer)
+        (package-map-dot--executeandshow)))))
 
 
 (defun package-map--makedigraphgroups (hashtable colormap shapemap
@@ -224,6 +237,7 @@
                             (package-map--newname mento)))))))))
      hashtable)))
 
+
 (defun package-map-makedigraphdotfile (&optional surround)
   "Make a dot file representation of all the top level definitions in a project, and their references. If SURROUND, then group the functions of each file."
   (interactive)
@@ -231,7 +245,7 @@
     ;; TODO: implement these
     (let ((colormap (package-map--makecolormap hashtable))
           (shapemap package-map-parse-function-shapes))
-      (with-current-buffer (find-file-noselect "graphviz2.dot")
+      (with-current-buffer (find-file-noselect package-map-dot-file)
         (erase-buffer)
         (insert "digraph G {\n")
         (package-map--makedigraphgroups hashtable
@@ -242,14 +256,12 @@
                                                colormap
                                                shapemap)
         (insert "}\n")
-        (save-buffer)))))
-
-
+        (save-buffer)
+        (package-map-dot--executeandshow)))))
 
 ;; https://graphviz.org/doc/info/attrs.html
 
 ;; TODO:
-;;  * DONE Get borders around Clusters
 ;;  * Implement arrows between clusters to show how
 ;;    the 'requires and 'provide work
 
