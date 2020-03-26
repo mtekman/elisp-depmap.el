@@ -110,6 +110,7 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
       (maphash   ;; iterate hashtable
        (lambda (vname annotations)
          (package-map-secondhelp--updatementionslist vname
+                                                     file
                                                      annotations
                                                      funcs-by-line-asc))
        hashtable))))

@@ -66,12 +66,11 @@ This will be used to scan all files for top level definitions."
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
 
-(defun package-map-secondhelp--updatementionslist (vname annotations funcs-by-line-asc)
-  "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
+(defun package-map-secondhelp--updatementionslist (vname file annotations funcs-by-line-asc)
+  "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds in FILE."
   (let ((vnam-regex (format "\\( \\|(\\|\\b\\)%s\\( \\|)\\|\\b\\)" vname))
         (mentionlst (plist-get annotations :mentions))
-        (vnam-line (plist-get annotations :line-beg))
-        (vnam-file (plist-get annotations :file)))
+        (vnam-line (plist-get annotations :line-beg)))
     (goto-char 0)
     (while (search-forward-regexp vnam-regex nil t)
       (let ((lnum (line-number-at-pos)))
@@ -79,7 +78,7 @@ This will be used to scan all files for top level definitions."
           ;; skip the top level definition
           (let ((called-func (package-map-secondhelp--callingfuncatline
                               lnum
-                              vnam-file
+                              file
                               funcs-by-line-asc)))
             (if called-func
                 (push called-func mentionlst))))))
