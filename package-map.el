@@ -108,7 +108,7 @@
                  (vment (plist-get info :mentions)))
              (let ((numlines (if vends (- vends vbegs) 1)))
                (insert
-                (format "  \"%s\" [shape=%s,color=%s,=%s]\n"
+                (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
                         oname
                         (alist-get (intern vtype) shapemap)
                         (alist-get vfile colormap)
