@@ -52,6 +52,39 @@
   :group 'package-map)
 
 
+;; (package-map-parse--alltopdefs-file-requireprovide (car (package-map-parse--getsourcefiles)) (package-map-parse--generatemap))
+(defun package-map-parse--alltopdefs-file-requireprovide (file hashdefs)
+  "Get all imports and package definitions from FILE and put into a HASHDEFS."
+  (save-excursion
+    (with-current-buffer (find-file-noselect file)
+      (goto-char 0)
+      (let ((provname nil)
+            (mentions nil)
+            (regit "^(\\(require\\|provide\\) '"))
+        (while (search-forward-regexp regit nil t)
+          ;; Get type
+          (let* ((type-end (progn (forward-whitespace -1) (point)))
+                 (type-beg (1+ (move-beginning-of-line 1)))
+                 (type-nam (buffer-substring-no-properties type-beg type-end)))
+            (goto-char type-end)
+            (forward-whitespace 1)
+            ;; Get variable name
+            (let* ((req-beg (search-forward "'" (point-at-eol)))
+                   (req-end (progn (forward-whitespace 1)
+                                   (forward-whitespace -1)
+                                   (search-backward ")" req-beg)))
+                   (req-nam (buffer-substring-no-properties req-beg req-end)))
+              ;; Make a wish make a succotash wish
+              (cond ((string= type-nam "require") (push req-nam mentions))
+                    ((string= type-nam "provide") (setq provname req-nam))
+                    (t (error "Unknown " type-nam))))))
+        (if provname
+            (puthash provname
+                     `(:type "imports" :file ,file :mentions ,mentions)
+                     hashdefs)
+          (error "Unable to find provides for file" file))))))
+
+
 (defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use grep or projectile, because those sonuvabitch finish hooks are not reliable."
