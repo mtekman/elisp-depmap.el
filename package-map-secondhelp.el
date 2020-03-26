@@ -44,6 +44,8 @@ This will be used to scan all files for top level definitions."
             (func-lend (nth 1 elm))
             (func-name (nth 2 elm))
             (func-file (nth 3 elm)))
+        ;; If current line number in file matches the
+        ;; flanking beg and end in the list (and the file)
         (if (and (string= file func-file)
                  (<= func-lbeg lnum func-lend))
             (cl-pushnew func-name func))))
