@@ -36,7 +36,8 @@
 
 (defun package-map-parse--getsourcefiles ()
   "Find all source files from the current project."
-  (-filter (lambda (it) (string-suffix-p ".el" it))
+  (-filter (lambda (it) (and (string-suffix-p ".el" it)
+                        (not (string-match-p "\\#" it))))
            (directory-files (projectile-project-root))))
 
 (defgroup package-map nil
