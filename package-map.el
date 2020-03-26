@@ -158,7 +158,8 @@
 
 (defun package-map--makedigraphgroups (hashtable colormap shapemap
                                                  &optional surround)
-  "Make digraph subgraphs for each file cluster, using HASHTABLE files, and sytled using COLORMAP and SHAPEMAP. If SURROUND, box the functions in each file"
+  "Make digraph subgraphs for each file cluster, using HASHTABLE files, and styled using COLORMAP and SHAPEMAP. 
+If SURROUND, box the functions in each file."
   (let* ((filelist (package-map--filesuniq hashtable))
          (clustnames (mapcar* #'cons
                               filelist
