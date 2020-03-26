@@ -57,13 +57,17 @@
 (defvar package-map-colors-available
   '(red blue green orange purple gray yellow pink brown navy maroon violet))
 
+
+(defun package-map--filesuniq (hashtable)
+  "Get the unique files in HASHTABLE."
+  (seq-uniq (--map (plist-get it :file)
+                   (hash-table-values
+                    hashtable))))
+
 (defun package-map--makecolormap (hashtable)
   "From the HASHTABLE make a color map of files."
   (let ((colors package-map-colors-available)
-        (files-uniq (seq-uniq
-                     (--map (plist-get it :file)
-                            (hash-table-values
-                             hashtable)))))
+        (files-uniq (package-map--filesuniq hashtable)))
     (--map (let ((colr (nth it colors))
                  (file (nth it files-uniq)))
              `(,file . ,colr))
