@@ -143,53 +143,62 @@
 ;; 	}
 
 
-(defun package-map--makedigraphgroups (hashtable colormap shapemap)
-  "Make digraph subgraphs for each file cluster, using HASHTABLE files, and sytled using COLORMAP and SHAPEMAP."
-  (dolist (vfile (package-map--filesuniq hashtable))
-    (insert (format "  subgraph \"%s\" {\n" vfile))
-    (insert (format "      node [color=%s];\n" (alist-get vfile colormap)))
-    (insert (format "      label = \"%s\";\n" vfile))
-    (insert (format "      color=black;\n"))
-    ;; First pass define nodes
-    (maphash
-     (lambda (funcname info)
-       ;; Only process functions from VFILE
-       (if (eq (plist-get info :file) vfile)
-           (let ((oname (package-map--newname funcname))
-                 (vbegs (plist-get info :line-beg))
-                 (vends (plist-get info :line-end))
-                 (vtype (plist-get info :type))
-                 (vment (plist-get info :mentions)))
-             (let ((numlines (if vends (- vends vbegs) 1)))
-               (insert
-                (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
-                        (alist-get (intern vtype) shapemap)
-                        (1+ (/ numlines 5))
-                        oname))))))
-     hashtable)
-    ;; Second pass define intrafile links
-    (maphash
-     (lambda (funcname info)
-       ;; Only process functions from VFILE
-       (let ((oname (package-map--newname funcname))
-             (vbegs (plist-get info :line-beg))
-             (vends (plist-get info :line-end))
-             (vtype (plist-get info :type))
-             (vment (plist-get info :mentions)))
+(defun package-map--makedigraphgroups (hashtable colormap shapemap
+                                                 &optional surround)
+  "Make digraph subgraphs for each file cluster, using HASHTABLE files, and sytled using COLORMAP and SHAPEMAP. If SURROUND, box the functions in each file"
+  (let* ((filelist (package-map--filesuniq hashtable))
+         (clustnames (mapcar* #'cons
+                              filelist
+                              (--map (format "cluster_%d" it)
+                                     (number-sequence 0 (1- (length filelist))))))
+         (subnames (if surround clustnames)))
+    (dolist (vfile filelist)
+      (insert (format "  subgraph %s {\n" (if subnames
+                                                  (alist-get vfile clustnames)
+                                            (format "\"%s\"" vfile))))
+      (insert (format "      node [color=%s];\n" (alist-get vfile colormap)))
+      (insert (format "      label = \"%s\";\n" vfile))
+      (insert (format "      color=black;\n"))
+      ;; First pass define nodes
+      (maphash
+       (lambda (funcname info)
+         ;; Only process functions from VFILE
          (if (eq (plist-get info :file) vfile)
-             (dolist (mento vment)
-               (unless (eq funcname mento)
-                 (let* ((mento-info (gethash mento hashtable))
-                        (mento-file (plist-get mento-info :file)))
-                   ;; If functions are from the same file,
-                   ;; list them here.
-                   (if (string= vfile mento-file)
-                       (insert
-                        (format "      \"%s\" -> \"%s\"\n"
-                                oname
-                                (package-map--newname mento))))))))))
-     hashtable)
-    (insert "  }\n")))
+             (let ((oname (package-map--newname funcname))
+                   (vbegs (plist-get info :line-beg))
+                   (vends (plist-get info :line-end))
+                   (vtype (plist-get info :type))
+                   (vment (plist-get info :mentions)))
+               (let ((numlines (if vends (- vends vbegs) 1)))
+                 (insert
+                  (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
+                          (alist-get (intern vtype) shapemap)
+                          (1+ (/ numlines 5))
+                          oname))))))
+       hashtable)
+      ;; Second pass define intrafile links
+      (maphash
+       (lambda (funcname info)
+         ;; Only process functions from VFILE
+         (let ((oname (package-map--newname funcname))
+               (vbegs (plist-get info :line-beg))
+               (vends (plist-get info :line-end))
+               (vtype (plist-get info :type))
+               (vment (plist-get info :mentions)))
+           (if (eq (plist-get info :file) vfile)
+               (dolist (mento vment)
+                 (unless (eq funcname mento)
+                   (let* ((mento-info (gethash mento hashtable))
+                          (mento-file (plist-get mento-info :file)))
+                     ;; If functions are from the same file,
+                     ;; list them here.
+                     (if (string= vfile mento-file)
+                         (insert
+                          (format "      \"%s\" -> \"%s\";\n"
+                                  oname
+                                  (package-map--newname mento))))))))))
+       hashtable)
+      (insert "  }\n"))))
 
 (defun package-map--makedigraphcrossinglinks (hashtable colormap shapemap)
   "Make the digraph connections across clusters, using functions from HASHTABLE, and styled using COLORMAP and SHAPEMAP."
@@ -215,8 +224,8 @@
                             (package-map--newname mento)))))))))
      hashtable)))
 
-(defun package-map-makedigraphdotfile ()
-  "Make a dot file representation of all the top level definitions in a project, and their references."
+(defun package-map-makedigraphdotfile (&optional surround)
+  "Make a dot file representation of all the top level definitions in a project, and their references. If SURROUND, then group the functions of each file."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
     ;; TODO: implement these
@@ -227,7 +236,8 @@
         (insert "digraph G {\n")
         (package-map--makedigraphgroups hashtable
                                         colormap
-                                        shapemap)
+                                        shapemap
+                                        surround)
         (package-map--makedigraphcrossinglinks hashtable
                                                colormap
                                                shapemap)
@@ -239,7 +249,7 @@
 ;; https://graphviz.org/doc/info/attrs.html
 
 ;; TODO:
-;;  * Get borders around Clusters
+;;  * DONE Get borders around Clusters
 ;;  * Implement arrows between clusters to show how
 ;;    the 'requires and 'provide work
 
