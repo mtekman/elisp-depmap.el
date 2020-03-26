@@ -44,7 +44,8 @@
   :group 'coding)
 
 (defcustom package-map-parse-function-shapes
-  '((setq . plain) (defvar . plain) (defcustom . plain) (defun . note) (defsubst . tab) (defmacro . trapezium))
+  '((setq . plain) (defvar . plain) (defcustom . plain)
+    (defun . note) (defsubst . tab) (defmacro . trapezium))
   "Define variables to look for and graphviz shapes."
   :type 'list
   :group 'package-map)
@@ -88,9 +89,15 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                        hashdefs)))))
       hashdefs)))
 
+(defcustom package-map-parse-hashtablesize 50
+  "Size of hash table. 50 by default."
+  :group 'package-map)
+
 (defun package-map-parse--alltopdefs-filelist (filelist)
   "Get all top definitions from FILELIST and return a hashtable, with variable names as keys as well as type and bounds as values."
-  (let ((hashtable (make-hash-table :size 1000)))
+  (let ((hashtable (make-hash-table
+                    :size package-map-parse-hashtablesize
+                    :test #'equal)))
     (dolist (pfile filelist hashtable)
       (package-map-parse--alltopdefs-file pfile hashtable))))
 

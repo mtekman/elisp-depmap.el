@@ -83,6 +83,7 @@
         (replace-regexp-in-string pregx "§" fname)
       fname)))
 
+
 (defun package-map-makedotfile ()
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
@@ -90,7 +91,7 @@
     ;; TODO: implement these
     (let ((colormap (package-map--makecolormap hashtable))
           (shapemap package-map-parse-function-shapes))
-      (with-current-buffer (find-file "graphviz2.dot")
+      (with-current-buffer (find-file-noselect "graphviz2.dot")
         (erase-buffer)
         (insert "strict graph {\n")
         (maphash
@@ -103,11 +104,12 @@
                  (vment (plist-get info :mentions)))
              (let ((numlines (if vends (- vends vbegs) 1)))
                (insert
-                (format "  \"%s\" [height=%d,shape=%s,color=%s]\n"
+                (format "  \"%s\" [shape=%s,color=%s,penwidth=%d]\n"
                         oname
-                        (1+ (/ numlines 10))
                         (alist-get (intern vtype) shapemap)
-                        (alist-get vfile colormap))))
+                        (alist-get vfile colormap)
+                        (1+ (/ numlines 5))
+                        )))
              (dolist (mento vment)
                (unless (eq funcname mento)
                  (insert
@@ -115,18 +117,14 @@
                           oname
                           (package-map--newname mento)))))))
          hashtable)
-        (insert "}\n")))))
+        (insert "}\n")
+        (save-buffer)))))
 
+;; https://graphviz.org/doc/info/attrs.html
 
-;; Logic:
-;; -- if there is more than 1 file, then create several columns.
-;; -- if only 1 file, more free for all approach.
-
-;; [node]
-;;  -- height (size of function), label (vname), color (file)
-;; [edge]
-;;  --
-
+;; Testing
+;;(setq temphash (package-map-parse--generatemap))
+;;(setq linelist (package-map-secondhelp--makesortedlinelist temphash))
 
 (provide 'package-map)
 ;;; package-map.el ends here

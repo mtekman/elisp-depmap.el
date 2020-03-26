@@ -36,14 +36,16 @@ This will be used to scan all files for top level definitions."
                      alist "\\|") "\\)"))
 
 
-(defun package-map-secondhelp--callingfuncatline (lnum list-asc)
-  "Retrieve the function name in LIST-ASC at LNUM bisects."
+(defun package-map-secondhelp--callingfuncatline (lnum file list-asc)
+  "Retrieve the function name in LIST-ASC that LNUM bisects in FILE."
   (let ((func nil))
     (dolist (elm list-asc)
       (let ((func-lbeg (1+ (nth 0 elm)))
             (func-lend (nth 1 elm))
-            (func-name (nth 2 elm)))
-        (if (<= func-lbeg lnum func-lend)
+            (func-name (nth 2 elm))
+            (func-file (nth 3 elm)))
+        (if (and (string= file func-file)
+                 (<= func-lbeg lnum func-lend))
             (cl-pushnew func-name func))))
     (if func
         (if (> 1 (length func))
@@ -56,10 +58,11 @@ This will be used to scan all files for top level definitions."
     (maphash
      (lambda (nam vals)
        (let ((lbeg (plist-get vals :line-beg))
-             (lend (plist-get vals :line-end)))
+             (lend (plist-get vals :line-end))
+             (file (plist-get vals :file)))
          ;; We only want functions (those with a lend)
          (if lend
-             (cl-pushnew `(,lbeg ,lend ,nam) funcsbylinenum))))
+             (cl-pushnew `(,lbeg ,lend ,nam ,file) funcsbylinenum))))
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
 
@@ -67,12 +70,17 @@ This will be used to scan all files for top level definitions."
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds."
   (let ((vnam-regex (format "\\( \\|(\\|\\b\\)%s\\( \\|)\\|\\b\\)" vname))
         (mentionlst (plist-get annotations :mentions))
-        (vnam-line (plist-get annotations :line-beg)))
+        (vnam-line (plist-get annotations :line-beg))
+        (vnam-file (plist-get annotations :file)))
     (goto-char 0)
     (while (search-forward-regexp vnam-regex nil t)
       (let ((lnum (line-number-at-pos)))
         (unless (eq lnum vnam-line)
-          (let ((called-func (package-map-secondhelp--callingfuncatline lnum funcs-by-line-asc)))
+          ;; skip the top level definition
+          (let ((called-func (package-map-secondhelp--callingfuncatline
+                              lnum
+                              vnam-file
+                              funcs-by-line-asc)))
             (if called-func
                 (push called-func mentionlst))))))
     (plist-put annotations :mentions mentionlst)))
