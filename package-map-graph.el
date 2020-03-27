@@ -26,6 +26,7 @@
 
 ;;; Code:
 (require 'package-map-parse)
+(require 'subr-x)
 
 ;; helper funcs
 
@@ -52,82 +53,81 @@
              `(:file ,file :color ,colr :clust ,clst))
            (number-sequence 0 (1- (length files-uniq))))))
 
-(defun package-map-graph--newname (fname)
-  "Strip the projectname from FNAME."
+(defun package-map-graph--newname (functionname)
+  "Strip the projectname from FUNCTIONNAME."
   (let* ((proot (projectile-project-name (projectile-project-root)))
+         ;; FIXME: (projectile-project-root) is nil when called within anonymous function
          (prool (car (split-string proot ".el")))
          (pregx (format "^%s-" prool)))
-    (if package-map-stripprojectname
-        (replace-regexp-in-string pregx "§" fname)
-      fname)))
+    (if package-map-graph-stripprojectname
+        (replace-regexp-in-string pregx "§" functionname)
+      functionname)))
 
-(defun package-map-graph--makedigraphgroups (hashtable colormap shapemap &optional surround)
-  "Make digraph subgraphs for each file cluster, using HASHTABLE files, and styled using COLORMAP and SHAPEMAP.  If SURROUND, box the functions in each file."
-  (let ((filemap (package-map-graph--makefilemapcolors hashtable)))
-    (let ((filelist (--map (plist-get :file it) filemap))
-          (clstlist (--map (plist-get :clust it) filemap)))
-      (dolist (vfile filelist)
-        (insert (format "  subgraph %s {\n"
-                        (if surround
-                            (alist-get vfile clstlist)
-                          (format "\"%s\"" vfile))))
-        (insert (format "      node [color=%s];\n" (alist-get vfile colormap)))
-        (insert (format "      label = \"%s\";\n" vfile))
-        (insert (format "      color=black;\n"))
-        ;; First pass define nodes
-        (maphash
-         (lambda (funcname info)
-           ;; Only process functions from VFILE
-           (if (eq (plist-get info :file) vfile)
-               (let ((oname (package-map-graph--newname funcname))
-                     (vbegs (plist-get info :line-beg))
-                     (vends (plist-get info :line-end))
-                     (vtype (plist-get info :type)))
-                 (let ((numlines (if vends (- vends vbegs) 1)))
-                   (insert (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
-                                   (alist-get (intern vtype) shapemap)
-                                   (1+ (/ numlines 5))
-                                   oname))))))
-         hashtable)
-        ;; Second pass define intrafile links
-        (maphash
-         (lambda (funcname info)
-           ;; Only process functions from VFILE
+(defun package-map-graph--makedigraphgroups (hashtable filemap funcmap &optional surround)
+  "Make digraph subgraphs for each file cluster, using files from HASHTABLE.
+Decorate them using colors from FILEMAP and shapes from FUNCMAP.
+If SURROUND, box the functions in each file."
+  (dolist (vfile (--map (plist-get it :file) filemap))
+    (let* ((entry (--first (string= (plist-get it :file) vfile) filemap))
+           (color (plist-get entry :color))
+           (clust (plist-get entry :clust)))
+      (insert (format "  subgraph %s {\n" (if surround clust (format "\"%s\"" vfile))))
+      (insert (format "      node [color=%s];\n" color))
+      (insert (format "      label = \"%s\";\n" vfile))
+      (insert (format "      color=black;\n")))
+    ;; First pass define nodes
+    (maphash
+     (lambda (funcname info)
+       ;; Only process functions from VFILE
+       (if (eq (plist-get info :file) vfile)
            (let ((oname (package-map-graph--newname funcname))
-                 (vment (plist-get info :mentions)))
-             (if (eq (plist-get info :file) vfile)
-                 (dolist (mento vment)
-                   (unless (eq funcname mento)
-                     (let* ((mento-info (gethash mento hashtable))
-                            (mento-file (plist-get mento-info :file)))
-                       ;; If functions are from the same file,
-                       ;; list them here.
-                       (if (string= vfile mento-file)
-                           (insert (format "      \"%s\" <- \"%s\";\n"
-                                           oname
-                                           (package-map-graph--newname mento))))))))))
-         hashtable)
-        (insert "  }\n")))))
+                 (vbegs (plist-get info :line-beg))
+                 (vends (plist-get info :line-end))
+                 (vtype (plist-get info :type)))
+             (let ((numlines (if vends (- vends vbegs) 1)))
+               (insert (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
+                               (alist-get (intern vtype) funcmap)
+                               (1+ (/ numlines 5))
+                               oname))))))
+     hashtable)
+    ;; Second pass define intrafile links
+    (maphash
+     (lambda (funcname info)
+       ;; Only process functions from VFILE
+       (let ((oname (package-map-graph--newname funcname))
+             (vment (plist-get info :mentions)))
+         (if (eq (plist-get info :file) vfile)
+             (dolist (mento vment)
+               (unless (eq funcname mento)
+                 (let* ((mento-info (gethash mento hashtable))
+                        (mento-file (plist-get mento-info :file)))
+                   ;; If functions are from the same file,
+                   ;; list them here.
+                   (if (string= vfile mento-file)
+                       (insert (format "      \"%s\" -> \"%s\";\n"
+                                       oname
+                                       (package-map-graph--newname mento))))))))))
+     hashtable)
+    (insert "  }\n")))
 
 (defun package-map-graph--makedigraphcrossinglinks (hashtable)
   "Make the digraph connections across clusters, using functions from HASHTABLE."
-  (dolist (vfile (package-map-graph--filesuniq hashtable))
-    (maphash
-     (lambda (funcname info)
-       (let ((oname (package-map-graph--newname funcname))
-             (vment (plist-get info :mentions)))
-         (dolist (mento vment)
-           (unless (eq funcname mento)
-             (let* ((mento-info (gethash mento hashtable))
-                    (mento-file (plist-get mento-info :file)))
-               ;; If functions are NOT from the same file,
-               ;; list them here.
-               (if (not (string= vfile mento-file))
-                   (insert
-                    (format "  \"%s\" <- \"%s\"\n"
-                            oname
-                            (package-map-graph--newname mento)))))))))
-     hashtable)))
+  (maphash
+   (lambda (funcname info)
+     (let ((oname (package-map-graph--newname funcname))
+           (vfile (plist-get info :file))
+           (vment (plist-get info :mentions)))
+       (dolist (mento vment)
+         (unless (eq funcname mento)
+           (let* ((mento-info (gethash mento hashtable))
+                  (mento-file (plist-get mento-info :file)))
+             ;; If functions are NOT from the same file,
+             ;; list them here.
+             (unless (string= vfile mento-file)
+               (insert (format "  \"%s\" -> \"%s\"\n"
+                               oname
+                               (package-map-graph--newname mento)))))))))
+   hashtable))
 
 
 (provide 'package-map-graph)

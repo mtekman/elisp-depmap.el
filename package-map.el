@@ -90,12 +90,16 @@
                  (vends (plist-get info :line-end))
                  (vtype (plist-get info :type))
                  (vment (plist-get info :mentions)))
-             (let ((numlines (if vends (- vends vbegs) 1)))
+             (let* ((numlines (if vends (- vends vbegs) 1))
+                    (fileentry (--first (string= (plist-get it :file) vfile) filemap))
+                    (filecolor (plist-get fileentry :color))
+                    (funcshape (alist-get (intern vtype) funcmap))
+                    (linemods (1+ (/ numlines 5))))
                (insert (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
                                oname
-                               (alist-get (intern vtype) shapemap)
-                               (alist-get vfile colormap)
-                               (1+ (/ numlines 5)))))
+                               funcshape
+                               filecolor
+                               linemods)))
              (dolist (mento vment)
                (unless (eq funcname mento)
                  (insert (format "  \"%s\" -- \"%s\"\n"
