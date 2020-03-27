@@ -33,21 +33,23 @@
   "Make a summary org table of variables and references to them."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    (with-current-buffer (find-file "graphviz2.org")
+    (with-current-buffer (find-file-other-frame "graphviz2.org")
       (erase-buffer)
-      (insert "| Type | Name | File | #Lines |\
- #Mentions | Mentions |\n|--\n")
+      (insert "| Type | #Lines | Name | File | #Mentions | Mentions |\n|--\n")
       (maphash
        (lambda (funcname info)
          (let ((vfile (plist-get info :file))
                (vbegs (plist-get info :line-beg))
                (vends (plist-get info :line-end))
                (vtype (plist-get info :type))
-               (vment (plist-get info :mentions)))
+               (vment (--filter (not (string= funcname it))
+                                (plist-get info :mentions))))
            (insert
-            (format "| %s | %s | %s | %d | %d | %s |\n"
-                    vtype funcname vfile
+            (format "| %s | %d | %s | %s | %d | %s |\n"
+                    vtype
                     (if vends (- vends vbegs) 1)
+                    funcname
+                    vfile
                     (length vment)
                     vment))))
        hashtable)
@@ -118,42 +120,38 @@
     (find-file-other-frame outfile)))
 
 
-(defun package-map-makedotfile ()
+(defun package-map-graphviz ()
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    ;; TODO: implement these
-    (let ((colormap (package-map--makecolormap hashtable))
+    (let ((colormap (package-map-graph--makefilemapcolors hashtable))
           (shapemap package-map-parse-function-shapes))
-      (with-current-buffer (find-file-noselect package-map-dot-file)
+      (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "strict graph {\n")
         (maphash
          (lambda (funcname info)
-           (let ((oname (package-map--newname funcname))
+           (let ((oname (package-map-graph--newname funcname))
                  (vfile (plist-get info :file))
                  (vbegs (plist-get info :line-beg))
                  (vends (plist-get info :line-end))
                  (vtype (plist-get info :type))
                  (vment (plist-get info :mentions)))
              (let ((numlines (if vends (- vends vbegs) 1)))
-               (insert
-                (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
-                        oname
-                        (alist-get (intern vtype) shapemap)
-                        (alist-get vfile colormap)
-                        (1+ (/ numlines 5))
-                        )))
+               (insert (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
+                               oname
+                               (alist-get (intern vtype) shapemap)
+                               (alist-get vfile colormap)
+                               (1+ (/ numlines 5)))))
              (dolist (mento vment)
                (unless (eq funcname mento)
-                 (insert
-                  (format "  \"%s\" -- \"%s\"\n"
-                          oname
-                          (package-map--newname mento)))))))
+                 (insert (format "  \"%s\" -- \"%s\"\n"
+                                 oname
+                                 (package-map-graph--newname mento)))))))
          hashtable)
         (insert "}\n")
         (save-buffer)
-        (package-map-dot--executeandshow)))))
+        (package-map-exec--executeandshow)))))
 
 
 (defun package-map--makedigraphgroups (hashtable colormap shapemap

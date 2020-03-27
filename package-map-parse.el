@@ -36,17 +36,16 @@
 
 (defun package-map-parse--getsourcefiles ()
   "Find all source files from the current project."
-  (-filter (lambda (it) (and (string-suffix-p ".el" it)
-                        (not (string-match-p "\\#" it))))
-           (directory-files (projectile-project-root))))
+  (--filter (and (string-suffix-p ".el" it)
+                 (not (string-match-p "\\#" it)))
+            (directory-files (projectile-project-root))))
 
 (defgroup package-map nil
   "Main group for package-map package."
   :group 'coding)
 
 (defcustom package-map-parse-function-shapes
-  '((setq . assembly) (defvar . assembly) (defcustom . underline)
-    (defun . note) (defsubst . tab) (defmacro . trapezium))
+  '((setq . assembly) (defvar . assembly) (defcustom . underline) (defun . note) (defsubst . tab) (defmacro . trapezium))
   "Define variables to look for and graphviz shapes."
   :type 'list
   :group 'package-map)
@@ -77,12 +76,12 @@
               ;; Make a wish make a succotash wish
               (cond ((string= type-nam "require") (push req-nam mentions))
                     ((string= type-nam "provide") (setq provname req-nam))
-                    (t (error "Unknown " type-nam))))))
+                    (t (error "Unknown: %s" type-nam))))))
         (if provname
             (puthash provname
                      `(:type "imports" :file ,file :mentions ,mentions)
                      hashdefs)
-          (error "Unable to find provides for file" file))))))
+          (error "Unable to find provides for file %s" file))))))
 
 
 (defun package-map-parse--alltopdefs-file (file hashdefs)
@@ -124,7 +123,8 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
       hashdefs)))
 
 (defcustom package-map-parse-hashtablesize 50
-  "Size of hash table. 50 by default."
+  "Size of hash table.  50 by default."
+  :type 'integer
   :group 'package-map)
 
 (defun package-map-parse--alltopdefs-filelist (filelist)
