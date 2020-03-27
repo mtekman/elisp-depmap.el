@@ -46,14 +46,13 @@
                (vtype (plist-get info :type))
                (vment (--filter (not (string= funcname it))
                                 (plist-get info :mentions))))
-           (insert
-            (format "| %s | %d | %s | %s | %d | %s |\n"
-                    vtype
-                    (if vends (- vends vbegs) 1)
-                    funcname
-                    vfile
-                    (length vment)
-                    vment))))
+           (insert (format "| %s | %d | %s | %s | %d | %s |\n"
+                           vtype
+                           (if vends (- vends vbegs) 1)
+                           funcname
+                           vfile
+                           (length vment)
+                           vment))))
        hashtable)
       (org-table-align))))
 
@@ -62,13 +61,12 @@
   "Make a dot file representation of all the top level definitions in a project, and their references.  If SURROUND, then group the functions of each file."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    ;; TODO: implement these
-    (let ((colormap (package-map-graph--makefilemapcolors hashtable))
-          (shapemap package-map-parse-function-shapes))
+    (let ((filemap (package-map-graph--makefilemapcolors hashtable))
+          (funcmap package-map-parse-function-shapes))
       (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "digraph G {\n")
-        (package-map-graph--makedigraphgroups hashtable colormap shapemap surround)
+        (package-map-graph--makedigraphgroups hashtable filemap funcmap surround)
         (package-map-graph--makedigraphcrossinglinks hashtable)
         (insert "}\n")
         (save-buffer)
@@ -79,8 +77,8 @@
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    (let ((colormap (package-map-graph--makefilemapcolors hashtable))
-          (shapemap package-map-parse-function-shapes))
+    (let ((filemap (package-map-graph--makefilemapcolors hashtable))
+          (funcmap package-map-parse-function-shapes))
       (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "strict graph {\n")

@@ -26,33 +26,34 @@
 
 ;;; Code:
 (defcustom package-map-exec-file "~/graphviz2.dot" ;
-  "Location of dot file. The output image file will use the prefix before the extension."
+  "Location of dot file.  The output image file will use the prefix before the extension."
   :type 'string
   :group 'package-map)
 
 (defcustom package-map-exec-outext "png"
-  "Output file type"
+  "Output file type."
   :type 'string
   :options '("png" "svg" "tiff" "jpeg" "eps" "json")
   :group 'package-map)
 
 (defcustom package-map-exec-commandargs ""
-  "Other command line args"
+  "Other command line args for dot executable."
   :type 'string
   :group 'package-map)
 
 (defun package-map-exec--executeandshow ()
   "Execute the dotfile command and then show the graph."
   (let* ((outfile (format "%s.%s"
-                         (car (split-string package-map-exec-file "\\."))
-                         package-map-exec-outext)))
-    (shell-command-to-string
-     (format "dot %s -T%s %s -o %s"
-             package-map-exec-file
-             package-map-exec-outext
-             package-map-exec-commandargs
-             outfile))
-    (find-file-other-frame outfile)))
+                          (car (split-string package-map-exec-file "\\."))
+                          package-map-exec-outext))
+         (command (format "dot %s -T%s %s -o %s"
+                          package-map-exec-file
+                          package-map-exec-outext
+                          package-map-exec-commandargs
+                          outfile))
+         (dmesg (shell-command-to-string command)))
+    (find-file-noselect outfile)
+    `(,command . ,dmesg)))
 
 (provide 'package-map-exec)
 ;;; package-map-exec.el ends here

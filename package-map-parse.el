@@ -45,7 +45,7 @@
   :group 'coding)
 
 (defcustom package-map-parse-function-shapes
-  '((setq . assembly) (defvar . assembly) (defcustom . underline) (defun . note) (defsubst . tab) (defmacro . trapezium))
+  '((setq . plain) (defvar . plain) (defcustom . underline) (defun . note) (defsubst . tab) (defmacro . trapezium))
   "Define variables to look for and graphviz shapes."
   :type 'list
   :group 'package-map)

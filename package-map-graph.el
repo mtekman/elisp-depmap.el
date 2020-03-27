@@ -1,6 +1,6 @@
 ;;; package-map-graph.el --- Generate a graphviz map of functions and definitions -*- lexical-binding: t; -*-
 
-;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
+;; Copyright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
 ;; URL: https://github.com/mtekman/remind-bindings.el
@@ -22,12 +22,14 @@
 
 ;;; Commentary:
 
+;; See package-map.el
+
 ;;; Code:
 (require 'package-map-parse)
 
 ;; helper funcs
 
-(defcustom package-map-stripprojectname t
+(defcustom package-map-graph-stripprojectname t
   "Strip the project name from the graph."
   :type 'boolean
   :group 'package-map)
@@ -35,8 +37,7 @@
 (defun package-map-graph--filesuniq (hashtable)
   "Get the unique files in HASHTABLE."
   (seq-uniq (--map (plist-get it :file)
-                   (hash-table-values
-                    hashtable))))
+                   (hash-table-values hashtable))))
 
 (defvar package-map-graph--colors-available
   '(red blue green orange purple gray yellow pink brown navy maroon violet))
