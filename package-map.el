@@ -22,7 +22,7 @@
 
 ;;; Commentary:
 
-;; TODO: - Label (interactive) when parsing.
+;; Junk
 
 ;;; Code:
 (require 'package-map-graph)
@@ -35,7 +35,7 @@
   "Make a summary org table of variables and references to them."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    (with-current-buffer (find-file-other-frame "graphviz2.org")
+    (with-current-buffer (find-file-noselect "graphviz2.org")
       (erase-buffer)
       (insert "| Type | #Lines | Name | File | #Mentions | Mentions |\n|--\n")
       (maphash
@@ -57,8 +57,9 @@
       (org-table-align))))
 
 
-(defun package-map-graphviz-digraph (&optional surround)
-  "Make a dot file representation of all the top level definitions in a project, and their references.  If SURROUND, then group the functions of each file."
+(defun package-map-graphviz-digraph (&optional noclust)
+  "Make a dot file representation of all the top level definitions in a project, and their references.
+If NOCLUST, then don't group the functions of each file."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
     (let ((filemap (package-map-graph--makefilemapcolors hashtable))
@@ -66,8 +67,9 @@
       (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "digraph G {\n")
-        (package-map-graph--makedigraphgroups hashtable filemap funcmap surround)
-        (package-map-graph--makedigraphcrossinglinks hashtable)
+        (insert "  graph [nodesep=0.7,ranksep=0.9];")
+        (package-map-graph--makedigraphgroups hashtable filemap funcmap noclust)
+        (package-map-graph--makedigraphcrossinglinks hashtable filemap)
         (insert "}\n")
         (save-buffer)
         (package-map-exec--executeandshow)))))
@@ -84,32 +86,40 @@
         (insert "strict graph {\n")
         (maphash
          (lambda (funcname info)
-           (let ((oname (package-map-graph--newname funcname))
-                 (vfile (plist-get info :file))
+           (let ((vfile (plist-get info :file))
                  (vbegs (plist-get info :line-beg))
                  (vends (plist-get info :line-end))
                  (vtype (plist-get info :type))
                  (vment (plist-get info :mentions)))
-             (let* ((numlines (if vends (- vends vbegs) 1))
+             (let* ((numlines (if (and vends (not (eq vtype 'defun))) (- vends vbegs) 1))
                     (fileentry (--first (string= (plist-get it :file) vfile) filemap))
                     (filecolor (plist-get fileentry :color))
+                    (filesymbl (plist-get fileentry :symbol))
                     (funcshape (alist-get (intern vtype) funcmap))
-                    (linemods (1+ (/ numlines 5))))
+                    (linemods (1+ (/ numlines 5)))
+                    (oname (package-map-graph--newname funcname vfile filesymbl)))
                (insert (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
                                oname
                                funcshape
                                filecolor
-                               linemods)))
-             (dolist (mento vment)
-               (unless (eq funcname mento)
-                 (insert (format "  \"%s\" -- \"%s\"\n"
-                                 oname
-                                 (package-map-graph--newname mento)))))))
+                               linemods))
+               (dolist (mento vment)
+                 (unless (eq funcname mento)
+                   (let* ((mento-entry (gethash mento hashtable))
+                          (mento-file (plist-get mento-entry :file))
+                          (mento-fileinfo (--first (string= (plist-get it :file)
+                                                            mento-file)
+                                                   filemap))
+                          (mento-symb (plist-get mento-fileinfo :symbol)))
+                     (insert (format "  \"%s\" -- \"%s\"\n"
+                                     oname
+                                     (package-map-graph--newname mento
+                                                                 mento-file
+                                                                 mento-symb)))))))))
          hashtable)
         (insert "}\n")
         (save-buffer)
         (package-map-exec--executeandshow)))))
-
 
 
 ;; https://graphviz.org/doc/info/attrs.html
