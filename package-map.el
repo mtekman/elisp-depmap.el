@@ -45,11 +45,15 @@
                   package-map-decoratedigraph ";")))
 
 
+;;;###autoload
 (defun package-map-makesummarytable ()
   "Make a summary org table of variables and references to them."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
-    (with-current-buffer (find-file-noselect "graphviz2.org")
+    (with-current-buffer
+        (find-file (format "%s.%s"
+                           (car (split-string package-map-exec-file "\\."))
+                           "org"))
       (erase-buffer)
       (insert "| Type | #Lines | Name | File | #Mentions | Mentions |\n|--\n")
       (maphash
@@ -71,6 +75,7 @@
       (org-table-align))))
 
 
+;;;###autoload
 (defun package-map-graphviz-digraph (&optional noclust)
   "Make a dot file representation of all the top level definitions in a project, and their references.  If NOCLUST, then don't group the functions of each file."
   (interactive)
@@ -87,7 +92,7 @@
         (save-buffer)
         (package-map-exec--executeandshow)))))
 
-
+;;;###autoload
 (defun package-map-graphviz ()
   "Make a dot file representation of all the top level definitions in a project, and their references."
   (interactive)
