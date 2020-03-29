@@ -5,7 +5,7 @@
 ;; Author: Mehmet Tekman
 ;; URL: https://github.com/mtekman/remind-bindings.el
 ;; Keywords: outlines
-;; Package-Requires: ((emacs "26.1") (projectile "2.2.0-snapshot"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
 
 ;;; License:
@@ -61,10 +61,9 @@
              `(:file ,file :color ,colr :clust ,clst, :symbol ,symb))
            (number-sequence 0 (1- (length files-uniq))))))
 
-(defun package-map-graph--newname (functionname &optional filename symbol)
+(defun package-map-graph--newname (functionname filename &optional symbol)
   "Strip the projectname from FUNCTIONNAME, or use the FILENAME as the prefix to strip off.  If SYMBOL, use that as replacement."
-  (let* ((proot (or filename (projectile-project-name (projectile-project-root))))
-         (prool (car (split-string proot "\\.el")))
+  (let* ((prool (car (split-string filename "\\.el")))
          (pregx (format "^%s" prool)))
     (if package-map-graph-stripprojectname
         (replace-regexp-in-string pregx (or symbol "§") functionname)

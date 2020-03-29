@@ -1,11 +1,11 @@
-;;; package-map-parse.el --- Uses projectile to construct a hashtable of definitions -*- lexical-binding: t; -*-
+;;; package-map-parse.el --- Construct a hashtable of top level definitions -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
 ;; URL: https://github.com/mtekman/remind-bindings.el
 ;; Keywords: outlines
-;; Package-Requires: ((emacs "26.1") (projectile "2.2.0-snapshot"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
 
 ;;; License:
@@ -22,17 +22,13 @@
 
 ;;; Commentary:
 
-;; Go through all files using projectile and retrieve top level
-;; definitions and their positions then determine which functions
-;; are called by which others.
+;; Go through all and retrieve the top level definitions and their
+;; positions then determine which functions are called by which others.
 
 
 ;;; Code:
 (require 'package-map-secondhelp)
-
 (require 'paren)
-(require 'projectile)
-
 
 (defcustom package-map-parse-function-shapes
   '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium))
