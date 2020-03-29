@@ -28,24 +28,26 @@
 (require 'package-map-parse)
 (require 'subr-x)
 
-;; helper funcs
-
 (defcustom package-map-graph-stripprojectname t
   "Strip the project name from the graph."
   :type 'boolean
   :group 'package-map)
 
+(defcustom package-map-graph-linemod 10
+  "Line scaling modifier. Higher reduces the border width."
+  :type 'integer
+  :group 'package-map)
+
+(defvar package-map-graph--colors-available
+  '(red blue darkgreen orange purple gray green yellow pink brown navy maroon violet))
+
+(defvar package-map-graph--symbols-available
+  '("ᚻ" "ᛉ" "ᛊ" "ᛋ" "ᛗ" "ᛝ" "ᛢ" "ᛪ" "ᛯ" "ᛸ" "ᛒ" "ᚷ" "ᚫ" "ᚣ" "ŧ" "Ω" "Æ" "þ"))
+
 (defun package-map-graph--filesuniq (hashtable)
   "Get the unique files in HASHTABLE."
   (seq-uniq (--map (plist-get it :file)
                    (hash-table-values hashtable))))
-
-(defvar package-map-graph--colors-available
-  '(red blue green orange purple gray yellow pink brown navy maroon violet))
-
-(defvar package-map-graph--symbols-available
-  '("Ω" "Ł" "€" "Ŧ" "¥" "Ø" "Æ" "ẞ" "Ð" "Ŋ" "Ħ" "Ł" "@" "€" "¶" "ŧ" "ø" "þ"
-    "æ" "ð" "đ" "ŋ" "ħ" "ĸ" "ł" "¢" "µ"))
 
 (defun package-map-graph--makefilemapcolors (hashtable)
   "From the HASHTABLE make a plist of file, cluster no, and color for each file."
@@ -69,6 +71,18 @@ If SYMBOL, use that as replacement"
         (replace-regexp-in-string pregx (or symbol "§") functionname)
       functionname)))
 
+(defcustom package-map-graph-decoratesubgraph
+  '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
+  "Attributes to decorate subgraph with"
+  :type 'alist
+  :group 'package-map)
+
+(defun package-map-graph--decorate-subgraph ()
+  "Generate format string for `package-map-graph-decoratesubgraph'."
+  (mapconcat (lambda (x) (format "      %s=%s;" (car x) (cdr x)))
+             package-map-graph-decoratesubgraph
+             "\n"))
+
 (defun package-map-graph--makedigraphgroups (hashtable filemap funcmap &optional noclust)
   "Make digraph subgraphs for each file cluster, using files from HASHTABLE.
 Decorate them using colors from FILEMAP and shapes from FUNCMAP.
@@ -81,28 +95,34 @@ If NOCLUST, do not cluster functions from the same file."
       (insert (format "  subgraph %s {\n" (if noclust
                                               (format "\"%s\"" vfile)
                                             clust))
-              (format "      color=black;\n")
-              (format "      fontsize=25.0;\n")
-              (format "      fontname=\"times bold\";\n")
+              (format "%s\n" (package-map-graph--decorate-subgraph))
               (format "      label = \"%s\";\n" (if package-map-graph-stripprojectname
                                                     (format "[%s] %s" symbl vfile)
                                                   vfile))
+              (format "      edge [color=%s];\n" color)
               (format "      node [color=%s];\n" color))
       ;; First pass define nodes
-      (maphash
-       (lambda (funcname info)
-         ;; Only process functions from VFILE
-         (if (string= (plist-get info :file) vfile)
-             (let ((oname (package-map-graph--newname funcname vfile symbl))
-                   (vbegs (plist-get info :line-beg))
-                   (vends (plist-get info :line-end))
-                   (vtype (plist-get info :type)))
-               (let ((numlines (if vends (- vends vbegs) 1)))
-                 (insert (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
-                                 (alist-get (intern vtype) funcmap)
-                                 (1+ (/ numlines 5))
-                                 oname))))))
-       hashtable)
+      (let ((customs '("rank = same")))
+        (maphash
+         (lambda (funcname info)
+           ;; Only process functions from VFILE
+           (if (string= (plist-get info :file) vfile)
+               (let ((oname (package-map-graph--newname funcname vfile symbl))
+                     (vbegs (plist-get info :line-beg))
+                     (vends (plist-get info :line-end))
+                     (vtype (plist-get info :type)))
+                 (if (string= "defcustom" vtype)
+                     ;; Store customs to use as same rank later
+                     (cl-pushnew (format "\"%s\"" oname) customs))
+                 (let ((numlines (if vends (- vends vbegs) 1)))
+                   (insert (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
+                                   (alist-get (intern vtype) funcmap)
+                                   (1+ (/ numlines package-map-graph-linemod))
+                                   oname))))))
+         hashtable))
+        ;; Rank all customs at the top -- looks ugly, leave it.
+        ;; (insert (format "      {%s;}\n" (mapconcat 'identity
+        ;;                                            (reverse customs) ";"))))
       ;; Second pass define intrafile links
       (maphash
        (lambda (funcname info)
@@ -125,6 +145,7 @@ If NOCLUST, do not cluster functions from the same file."
        hashtable))
       (insert "  }\n")))
 
+
 (defun package-map-graph--makedigraphcrossinglinks (hashtable filemap)
   "Make the digraph connections across clusters, using functions from HASHTABLE, and FILEMAP info."
   (maphash
@@ -133,6 +154,7 @@ If NOCLUST, do not cluster functions from the same file."
            (vment (plist-get info :mentions)))
        (let* ((ventry (--first (string= (plist-get it :file) vfile) filemap))
               (vsymbl (plist-get ventry :symbol))
+              (vcolor (plist-get ventry :color))
               (oname (package-map-graph--newname funcname vfile vsymbl)))
          (dolist (mento vment)
            (unless (eq funcname mento)
@@ -145,12 +167,11 @@ If NOCLUST, do not cluster functions from the same file."
                ;; list them here.
                (unless (string= vfile mento-file)
                  (insert (format
-                          "  \"%s\" -> \"%s\"\n"
+                          "  \"%s\" -> \"%s\";\n"
                           oname
-                          (package-map-graph--newname
-                           mento
-                           mento-file
-                           mento-symb))))))))))
+                          (package-map-graph--newname mento
+                                                      mento-file
+                                                      mento-symb))))))))))
    hashtable))
 
 

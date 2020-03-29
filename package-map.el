@@ -31,6 +31,20 @@
 (require 'org-table)
 (require 'subr-x)
 
+(defcustom package-map-decoratedigraph
+  '((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))
+  "Attributes to decorate subgraph with"
+  :type 'alist
+  :group 'package-map)
+
+
+(defun package-map--decorate-digraph ()
+  "Generate format string for `package-map--decoratedigraph'."
+  (format "[%s]" (mapconcat
+                  (lambda (x) (format "%s=%s" (car x) (cdr x)))
+                  package-map-decoratedigraph ";")))
+
+
 (defun package-map-makesummarytable ()
   "Make a summary org table of variables and references to them."
   (interactive)
@@ -67,7 +81,7 @@ If NOCLUST, then don't group the functions of each file."
       (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "digraph G {\n")
-        (insert "  graph [nodesep=0.7,ranksep=0.9];")
+        (insert (format "  graph %s;\n" (package-map--decorate-digraph)))
         (package-map-graph--makedigraphgroups hashtable filemap funcmap noclust)
         (package-map-graph--makedigraphcrossinglinks hashtable filemap)
         (insert "}\n")
@@ -96,7 +110,7 @@ If NOCLUST, then don't group the functions of each file."
                     (filecolor (plist-get fileentry :color))
                     (filesymbl (plist-get fileentry :symbol))
                     (funcshape (alist-get (intern vtype) funcmap))
-                    (linemods (1+ (/ numlines 5)))
+                    (linemods (1+ (/ numlines package-map-graph-linemod)))
                     (oname (package-map-graph--newname funcname vfile filesymbl)))
                (insert (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
                                oname
@@ -111,7 +125,7 @@ If NOCLUST, then don't group the functions of each file."
                                                             mento-file)
                                                    filemap))
                           (mento-symb (plist-get mento-fileinfo :symbol)))
-                     (insert (format "  \"%s\" -- \"%s\"\n"
+                     (insert (format "  \"%s\" -- \"%s\";\n"
                                      oname
                                      (package-map-graph--newname mento
                                                                  mento-file
@@ -131,13 +145,3 @@ If NOCLUST, then don't group the functions of each file."
 (provide 'package-map)
 ;;; package-map.el ends here
 
-;; ;; Testing
-;;(setq temphash (package-map-parse--generatemap))
-;; (setq linelist (package-map-secondhelp--makesortedlinelist temphash))
-;; (--filter (string= (nth 2 it)
-;;                    "package-map-parse--generatemap")
-;;           linelist)
-;; (package-map-secondhelp--updatementionslist
-;;  "package-map-parse--generatemap"
-;;  (gethash "package-map-parse--generatemap" temphash)
-;;  linelist)

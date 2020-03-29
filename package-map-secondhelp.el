@@ -28,6 +28,10 @@
 (require 'cl-lib)
 (require 'dash)
 
+(defgroup package-map nil
+  "Main group for package-map package."
+  :group 'coding)
+
 (defsubst package-map-secondhelp--generateregexfromalist (alist)
   "From ALIST, get the car variables and put them in a regex.
 This will be used to scan all files for top level definitions."
