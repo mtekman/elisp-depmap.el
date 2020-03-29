@@ -34,7 +34,7 @@
   :group 'package-map)
 
 (defcustom package-map-graph-linemod 10
-  "Line scaling modifier. Higher reduces the border width."
+  "Line scaling modifier.  Higher reduces the border width."
   :type 'integer
   :group 'package-map)
 
@@ -62,8 +62,7 @@
            (number-sequence 0 (1- (length files-uniq))))))
 
 (defun package-map-graph--newname (functionname &optional filename symbol)
-  "Strip the projectname from FUNCTIONNAME, or use the FILENAME as the prefix to strip off.
-If SYMBOL, use that as replacement"
+  "Strip the projectname from FUNCTIONNAME, or use the FILENAME as the prefix to strip off.  If SYMBOL, use that as replacement."
   (let* ((proot (or filename (projectile-project-name (projectile-project-root))))
          (prool (car (split-string proot "\\.el")))
          (pregx (format "^%s" prool)))
@@ -73,7 +72,7 @@ If SYMBOL, use that as replacement"
 
 (defcustom package-map-graph-decoratesubgraph
   '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
-  "Attributes to decorate subgraph with"
+  "Attributes to decorate subgraph with."
   :type 'alist
   :group 'package-map)
 
@@ -120,9 +119,9 @@ If NOCLUST, do not cluster functions from the same file."
                                    (1+ (/ numlines package-map-graph-linemod))
                                    oname))))))
          hashtable))
-        ;; Rank all customs at the top -- looks ugly, leave it.
-        ;; (insert (format "      {%s;}\n" (mapconcat 'identity
-        ;;                                            (reverse customs) ";"))))
+      ;; Rank all customs at the top -- looks ugly, leave it.
+      ;; (insert (format "      {%s;}\n" (mapconcat 'identity
+      ;;                                            (reverse customs) ";"))))
       ;; Second pass define intrafile links
       (maphash
        (lambda (funcname info)
@@ -143,7 +142,7 @@ If NOCLUST, do not cluster functions from the same file."
                                                                      vfile
                                                                      symbl))))))))))
        hashtable))
-      (insert "  }\n")))
+    (insert "  }\n")))
 
 
 (defun package-map-graph--makedigraphcrossinglinks (hashtable filemap)
@@ -154,7 +153,6 @@ If NOCLUST, do not cluster functions from the same file."
            (vment (plist-get info :mentions)))
        (let* ((ventry (--first (string= (plist-get it :file) vfile) filemap))
               (vsymbl (plist-get ventry :symbol))
-              (vcolor (plist-get ventry :color))
               (oname (package-map-graph--newname funcname vfile vsymbl)))
          (dolist (mento vment)
            (unless (eq funcname mento)

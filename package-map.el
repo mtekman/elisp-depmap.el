@@ -33,7 +33,7 @@
 
 (defcustom package-map-decoratedigraph
   '((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))
-  "Attributes to decorate subgraph with"
+  "Attributes to decorate subgraph with."
   :type 'alist
   :group 'package-map)
 
@@ -72,8 +72,7 @@
 
 
 (defun package-map-graphviz-digraph (&optional noclust)
-  "Make a dot file representation of all the top level definitions in a project, and their references.
-If NOCLUST, then don't group the functions of each file."
+  "Make a dot file representation of all the top level definitions in a project, and their references.  If NOCLUST, then don't group the functions of each file."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
     (let ((filemap (package-map-graph--makefilemapcolors hashtable))

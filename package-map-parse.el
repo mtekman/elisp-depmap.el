@@ -35,8 +35,7 @@
 
 
 (defcustom package-map-parse-function-shapes
-  '((setq . underline) (defvar . underline) (defcustom . sdl_comment_from_left)
-    (defun . note) (defsubst . tab) (defmacro . trapezium))
+  '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium))
   "Define variables to look for and graphviz shapes."
   :type 'list
   :group 'package-map)
