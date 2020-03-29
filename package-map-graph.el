@@ -38,6 +38,12 @@
   :type 'integer
   :group 'package-map)
 
+(defcustom package-map-graph-decoratesubgraph
+  '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
+  "Attributes to decorate subgraph with."
+  :type 'alist
+  :group 'package-map)
+
 (defvar package-map-graph--colors-available
   '(red blue darkgreen orange purple gray green yellow pink brown navy maroon violet))
 
@@ -68,12 +74,6 @@
     (if package-map-graph-stripprojectname
         (replace-regexp-in-string pregx (or symbol "§") functionname)
       functionname)))
-
-(defcustom package-map-graph-decoratesubgraph
-  '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
-  "Attributes to decorate subgraph with."
-  :type 'alist
-  :group 'package-map)
 
 (defun package-map-graph--decorate-subgraph ()
   "Generate format string for `package-map-graph-decoratesubgraph'."

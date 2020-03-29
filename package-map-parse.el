@@ -36,13 +36,18 @@
   :type 'list
   :group 'package-map)
 
+(defcustom package-map-parse-hashtablesize 50
+  "Size of hash table.  50 by default."
+  :type 'integer
+  :group 'package-map)
 
-(defun package-map-parse--getsourcefiles ()
-  "Find all source files from the current project."
-  (--filter (and (string-suffix-p ".el" it)
-                 (not (string-match-p "\\#" it)))
-            (directory-files (projectile-project-root))))
-
+(defun package-map-parse--getsourcefiles (&optional directory)
+  "Find all source files from DIRECTORY, otherwise defer to `default-directory'."
+  (let ((dir (or directory default-directory)))
+    (--map (replace-regexp-in-string (format "^%s" dir) "" it)  ;; replace main directory
+           (--filter (and (string-suffix-p ".el" it)            ;; don't want elc
+                          (not (string-match-p "\\#" it)))      ;; don't want temp
+                     (directory-files-recursively dir ".*\\.el")))))
 
 ;; (defun package-map-parse--alltopdefs-file-requireprovide (file hashdefs)
 ;;   "Get all imports and package definitions from FILE and put into a HASHDEFS."
@@ -77,7 +82,7 @@
 
 (defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
-Don't use grep or projectile, because those sonuvabitch finish hooks are not reliable."
+Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks are not reliable."
   (save-excursion
     (with-current-buffer (find-file-noselect file)
       (goto-char 0)
@@ -114,10 +119,6 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                          hashdefs)))))
         hashdefs))))
 
-(defcustom package-map-parse-hashtablesize 50
-  "Size of hash table.  50 by default."
-  :type 'integer
-  :group 'package-map)
 
 (defun package-map-parse--alltopdefs-filelist (filelist)
   "Get all top definitions from FILELIST and return a hashtable, with variable names as keys as well as type and bounds as values."
@@ -127,6 +128,7 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
     (dolist (pfile filelist hashtable)
       (package-map-parse--alltopdefs-file pfile hashtable))))
       ;;(package-map-parse--alltopdefs-file-requireprovide pfile hashtable)
+
 
 (defun package-map-parse--allsecondarydefs-file (file hashtable)
   "Get all secondary definitions in FILE for each of the top level definitions in HASHTABLE."
@@ -142,10 +144,12 @@ Don't use grep or projectile, because those sonuvabitch finish hooks are not rel
                                                      funcs-by-line-asc))
        hashtable))))
 
+
 (defun package-map-parse--allsecondarydefs-filelist (filelist hashtable)
   "Get all secondary definitions for all files in FILELIST for the top level definitions in HASHTABLE."
   (dolist (pfile filelist hashtable)
     (package-map-parse--allsecondarydefs-file pfile hashtable)))
+
 
 (defun package-map-parse--generatemap ()
   "Generate a map of toplevel function and variable definitions in a project."

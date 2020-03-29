@@ -5,7 +5,7 @@
 ;; Author: Mehmet Tekman
 ;; URL: https://github.com/mtekman/remind-bindings.el
 ;; Keywords: outlines
-;; Package-Requires: ((emacs "26.1") (projectile "2.2.0-snapshot"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
 
 ;;; License:
