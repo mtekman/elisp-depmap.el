@@ -1,4 +1,4 @@
-;;; package-map-secondhelp.el --- Helper functions to second pass -*- lexical-binding: t; -*-
+;;; package-map-secondhelp.el --- Helper functions for parse library -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
