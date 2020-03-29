@@ -23,8 +23,10 @@
 ;;; Commentary:
 
 ;; This package generates a graphviz DOT map of all the functions and variables
-;; in a given elisp package. The aim is to help developers see how tangled their
+;; in a given elisp package.  The aim is to help developers see how tangled their
 ;; code is and to help them refactor it.
+;;
+;; More info at https://graphviz.org/doc/info/attrs.html
 
 ;;; Code:
 (require 'package-map-graph)
@@ -141,8 +143,6 @@
         (save-buffer)
         (package-map-exec--executeandshow)))))
 
-
-;; https://graphviz.org/doc/info/attrs.html
 
 ;; TODO:
 ;;  * Implement arrows between clusters to show how

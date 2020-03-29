@@ -1,4 +1,4 @@
-;;; package-map-exec.el --- construct the DOT executable -*- lexical-binding: t; -*-
+;;; package-map-exec.el --- Construct the DOT executable -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
