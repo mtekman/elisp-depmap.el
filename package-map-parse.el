@@ -41,6 +41,12 @@
   :type 'integer
   :group 'package-map)
 
+(defcustom package-map-parse-topdefmethod 'imenu
+  "Choice of method to find top-level definitions in a project."
+  :options '(imenu regex)
+  :type 'symbol
+  :group 'package-map)
+
 (defun package-map-parse--getsourcefiles (&optional directory)
   "Find all source files from DIRECTORY, otherwise defer to `default-directory'."
   (let ((dir (or directory default-directory)))
@@ -83,6 +89,41 @@
 (defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks are not reliable."
+  (let ((meth-user package-map-parse-topdefmethod)
+        (meth-regex #'package-map-parse--alltopdefs-file-regex)
+        (meth-imenu #'package-map-parse--alltopdefs-file-imenu))
+    (cond ((eq meth-user 'regex) (funcall meth-regex file hashdefs))
+          ((eq meth-user 'imenu) (funcall meth-imenu file hashdefs))
+          (t (user-error "Invalid top-level definition method %s" meth-user)))))
+
+
+(defun package-map-parse-alltopdefs-imenu (file hashdefs)
+  "Easier implementation, use imenu to get ."
+  (with-current-buffer (find-file-noselect file)
+    (let ((topdefs (imenu--make-index-alist)))
+      (dolist (def topdefs)
+        (let ((vname-nam (car def))
+              (markerinf (cdr def)))
+          (unless (string= vname-nam "*Rescan*")
+            (if (string= vname-nam "Variables")
+                ;; play with
+                ;; - (imenu--make-index-alist) is what generates the
+                ;;   alist-equivalent of my hashtable, but it just uses
+                ;;   (beginning-of-defun) to iterate
+                ;;   through each file, and then a custom extraction
+                ;;   function to get variable name and position.
+                ;; - my regex approach is really not that much worse...
+                ;; (defun imenu-default-create-index-function ()
+                ;;    The most general method is to move point to end of buffer, then repeatedly call
+                ;;    `imenu-prev-index-position-function' and `imenu-extract-index-name-function'.
+                ;;    All the results returned by the latter are gathered into an index alist.
+                ;;    This method is used if those two variables are non-nil.
+                ;;  (marker-position (cdr (nth 8 (imenu--make-index-alist))))
+
+
+(defun package-map-parse--alltopdefs-file-regex (file hashdefs)
+  "Get the top definitions in FILE using regex and put into empty HASHDEFS.
+Inspired by a deep hatred of `grep' and `projectile-ripgrep', because those finish hooks are not reliable."
   (save-excursion
     (with-current-buffer (find-file-noselect file)
       (goto-char 0)
