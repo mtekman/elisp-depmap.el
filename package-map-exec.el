@@ -36,7 +36,7 @@
   :options '("png" "svg" "tiff" "jpeg" "eps" "json")
   :group 'package-map)
 
-(defcustom package-map-exec-commandargs ""
+(defcustom package-map-exec-commandargs nil
   "Other command line args for dot executable."
   :type 'string
   :group 'package-map)
@@ -46,14 +46,17 @@
   (let* ((outfile (format "%s.%s"
                           (car (split-string package-map-exec-file "\\."))
                           package-map-exec-outext))
-         (command (format "dot %s -T%s %s -o %s"
-                          package-map-exec-file
-                          package-map-exec-outext
-                          package-map-exec-commandargs
-                          outfile))
-         (dmesg (shell-command-to-string command)))
+         (command (combine-and-quote-strings
+                   (list "dot"
+                         (shell-quote-argument (expand-file-name package-map-exec-file))
+                         "-T"
+                         (shell-quote-argument package-map-exec-outext)
+                         (or package-map-exec-commandargs "")
+                         "-o"
+                         (shell-quote-argument (expand-file-name outfile)))))
+         (omesg (shell-command-to-string command)))
     (find-file-noselect outfile)
-    `(,command . ,dmesg)))
+    `(,command . ,omesg)))
 
 (provide 'package-map-exec)
 ;;; package-map-exec.el ends here
