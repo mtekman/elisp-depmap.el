@@ -87,8 +87,8 @@
 (defun package-map-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks are not reliable."
-  (save-excursion
-    (with-current-buffer (find-file-noselect file)
+  (with-current-buffer (find-file-noselect file)
+    (save-excursion
       (goto-char 0)
       (let ((reg-type (package-map-secondhelp--generateregexfromalist package-map-parse-function-shapes)))
         ;;(reg-vnam "\\(-*\\w+\\)+"))

@@ -32,6 +32,12 @@
   "Main group for package-map package."
   :group 'coding)
 
+(defcustom package-map-secondhelp-regexreferences
+  "\\( \\|(\\|\\b\\|'\\)%s\\( \\|)\\|\\b\\)"
+  "Regex to find references to a definition."
+  :type 'string
+  :group 'package-map)
+
 (defsubst package-map-secondhelp--generateregexfromalist (alist)
   "From ALIST, get the car variables and put them in a regex.
 This will be used to scan all files for top level definitions."
@@ -74,10 +80,10 @@ This will be used to scan all files for top level definitions."
 
 (defun package-map-secondhelp--updatementionslist (vname file annotations funcs-by-line-asc)
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds in FILE."
-  (save-excursion
-    (let ((vnam-regex (format "\\( \\|(\\|\\b\\)%s\\( \\|)\\|\\b\\)" vname))
-          (mentionlst (plist-get annotations :mentions))
-          (vnam-line (plist-get annotations :line-beg)))
+  (let ((vnam-regex (format package-map-secondhelp-regexreferences vname))
+        (mentionlst (plist-get annotations :mentions))
+        (vnam-line (plist-get annotations :line-beg)))
+    (save-excursion
       (goto-char 0)
       (while (search-forward-regexp vnam-regex nil t)
         (let ((lnum (line-number-at-pos)))
