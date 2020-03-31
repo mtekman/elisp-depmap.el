@@ -74,7 +74,8 @@ By default we only have variables and functions, though any number of groups can
 
 
 (defun package-map-graph--decorate (keyword &optional indent)
-  "Generate format string for KEYWORD from `package-map-graph-decorate'. If INDENT is nil, all properties are inlined into square brackets, otherwise each property is seperated by a newline followed by the INDENT amount in spaces."
+  "Generate format string for KEYWORD from `package-map-graph-decorate'.
+If INDENT is nil, all properties are inlined into square brackets, otherwise each property is seperated by a newline followed by the INDENT amount in spaces."
   (let ((func-lay (lambda (x) (format "%s=%s" (car x) (cdr x))))
         (keyw-lst (plist-get package-map-graph-decorate keyword))
         (inds-spc (if indent (make-string indent ? ) "")))
@@ -112,7 +113,7 @@ By default we only have variables and functions, though any number of groups can
 (defun package-map-graph--makesubsubgraph (hashtable funcmap entry subg ind)
   "Make a sub subgraph for file ENTRY info using the SUBG keyword from `package-map-graph-subclustergroups' from HASHTABLE.  Use FUNCMAP for shapes, and use IND to set the indent number."
   (let ((vfile (plist-get entry :file))
-        (color (plist-get entry :color))
+        ;;(color (plist-get entry :color))
         (clust (plist-get entry :clust))
         (symbl (plist-get entry :symbol))
         (nex-ind (+ ind package-map-graph-indentwidth))
@@ -203,7 +204,7 @@ Decorate them using colors from FILEMAP and shapes from FUNCMAP.  Set indent by 
 
 
 (defun package-map-graph--makedigraphcrossinglinks (hashtable filemap ind)
-  "Make the digraph connections across clusters, using functions from HASHTABLE, and FILEMAP info. Indent by IND amount."
+  "Make the digraph connections across clusters, using functions from HASHTABLE, and FILEMAP info.  Indent by IND amount."
   (let ((indent (make-string ind ? )))
     (maphash
      (lambda (funcname info)

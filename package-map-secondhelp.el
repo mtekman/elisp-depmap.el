@@ -42,7 +42,7 @@
   "From ALIST, get the car variables and put them in a regex.
 This will be used to scan all files for top level definitions."
   (concat "^(\\(cl-\\)?\\(" (mapconcat (lambda (x) (format "%s" (car x)))
-                             alist "\\|") "\\)"))
+                                       alist "\\|") "\\)"))
 
 (defun package-map-secondhelp--callingfuncatline (lnum file list-asc)
   "Retrieve the function name in LIST-ASC that LNUM bisects in FILE."

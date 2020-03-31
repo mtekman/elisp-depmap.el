@@ -156,14 +156,13 @@ Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks
 (defun package-map-parse--shuffle (lst seed)
   "Shuffle LST using SEED.  Not a true random shuffle, at all.
 Deterministic rotate and cut."
-  (let ((len-lst (length lst))
-        (sta-ind (mod seed (length lst))) ;; first element in list
+  (let ((sta-ind (mod seed (length lst))) ;; first element in list
         (hlf-ind (/ (length lst) 2)))
-    (let* ((rotated (append (subseq lst sta-ind)
-                            (subseq lst 0 sta-ind)))
+    (let* ((rotated (append (cl-subseq lst sta-ind)
+                            (cl-subseq lst 0 sta-ind)))
            (revpack (reverse rotated))
-           (cutpack (append (subseq revpack hlf-ind)
-                            (subseq revpack 0 hlf-ind))))
+           (cutpack (append (cl-subseq revpack hlf-ind)
+                            (cl-subseq revpack 0 hlf-ind))))
       cutpack)))
 
 
