@@ -38,10 +38,11 @@
   :type 'integer
   :group 'package-map)
 
-(defcustom package-map-graph-decoratesubgraph
-  '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
-  "Attributes to decorate subgraph with."
-  :type 'alist
+(defcustom package-map-graph-indentwidth 4
+  "Indent width in spaces."
+  :type 'integer
+  :group 'package-map)
+
 (defcustom package-map-graph-decorate
   '(:graph
     ((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))

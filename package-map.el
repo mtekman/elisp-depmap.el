@@ -66,21 +66,27 @@
 
 
 ;;;###autoload
-(defun package-map-graphviz-digraph (&optional noclust)
-  "Make a dot file representation of all the top level definitions in a project, and their references.  If NOCLUST, then don't group the functions of each file."
+(defun package-map-graphviz-digraph ()
+  "Make a dot file representation of all the top level definitions in a project, and their references.  Optionally set INDENT-WIDTH which is 2 by default."
   (interactive)
-  (let ((hashtable (package-map-parse--generatemap)))
+  (let ((hashtable (package-map-parse--generatemap))
+        (fn-decorate #'package-map-graph--decorate)
+        (fn-digraph #'package-map-graph--makedigraphgroups)
+        (fn-dicross #'package-map-graph--makedigraphcrossinglinks)
+        (fn-execshow #'package-map-exec--executeandshow)
+        (vr-funcmap package-map-parse-function-shapes)
+        (vr-indwidth package-map-graph-indentwidth))
     (let ((filemap (package-map-graph--makefilemapcolors hashtable))
-          (funcmap package-map-parse-function-shapes))
+          (indent (make-string vr-indwidth ? )))
       (with-current-buffer (find-file-noselect package-map-exec-file)
         (erase-buffer)
         (insert "digraph G {\n")
-        (insert (format "  graph %s;\n" (package-map--decorate-digraph)))
-        (package-map-graph--makedigraphgroups hashtable filemap funcmap noclust)
-        (package-map-graph--makedigraphcrossinglinks hashtable filemap)
+        (insert indent (format "graph %s;\n" (funcall fn-decorate :graph)))
+        (funcall fn-digraph hashtable filemap vr-funcmap vr-indwidth)
+        (funcall fn-dicross hashtable filemap vr-indwidth)
         (insert "}\n")
         (save-buffer)
-        (package-map-exec--executeandshow)))))
+        (funcall fn-execshow)))))
 
 ;;;###autoload
 (defun package-map-graphviz ()

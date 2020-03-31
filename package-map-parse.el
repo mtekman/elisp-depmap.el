@@ -32,7 +32,7 @@
 
 (defcustom package-map-parse-function-shapes
   '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium))
-  "Define variables to look for and graphviz shapes."
+  "Define variables to look, and the graphviz shapes they should take."
   :type 'list
   :group 'package-map)
 
