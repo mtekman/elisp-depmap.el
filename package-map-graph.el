@@ -65,6 +65,14 @@
   :type 'alist
   :group 'package-map)
 
+(defcustom package-map-graph-subclustergroups
+  '(:variables (setq defvar defcustom) :functions (defun defsubst defmacro))
+  "Define subcluster groups and the which symbols should be assigned to them.
+By default we only have variables and functions, though any number of groups can be defined.  It is not necessary to use all symbols from the `package-map-parse-function-shapes' variable."
+  :type 'list
+  :group 'package-map)
+
+
 (defun package-map-graph--decorate (keyword &optional indent)
   "Generate format string for KEYWORD from `package-map-graph-decorate'. If INDENT is nil, all properties are inlined into square brackets, otherwise each property is seperated by a newline followed by the INDENT amount in spaces."
   (let ((func-lay (lambda (x) (format "%s=%s" (car x) (cdr x))))
@@ -100,13 +108,6 @@
     (if package-map-graph-stripprojectname
         (replace-regexp-in-string pregx (or symbol "§") functionname)
       functionname)))
-
-(defun package-map-graph--decorate-subgraph ()
-  "Generate format string for `package-map-graph-decoratesubgraph'."
-  (mapconcat (lambda (x) (format "      %s=%s;" (car x) (cdr x)))
-             package-map-graph-decoratesubgraph
-             "\n"))
-
 
 (defun package-map-graph--makesubsubgraph (hashtable funcmap entry subg ind)
   "Make a sub subgraph for file ENTRY info using the SUBG keyword from `package-map-graph-subclustergroups' from HASHTABLE.  Use FUNCMAP for shapes, and use IND to set the indent number."
