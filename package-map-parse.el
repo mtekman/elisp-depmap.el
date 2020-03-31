@@ -38,7 +38,9 @@
 
 (defcustom package-map-parse-subclustergroups
   '(:variables (setq defvar defcustom) :functions (defun defsubst defmacro))
-  "Define subcluster groups and the which symbols should be assigned to them.  By default we only have variables and functions, though any number of groups can be defined. It is not necessary to use all symbols from `package-map-parse-function-shapes'.")
+  "Define subcluster groups and the which symbols should be assigned to them.  By default we only have variables and functions, though any number of groups can be defined. It is not necessary to use all symbols from `package-map-parse-function-shapes'."
+  :type 'list
+  :group 'package-map)
 
 (defcustom package-map-parse-hashtablesize 50
   "Size of hash table.  50 by default."
@@ -157,9 +159,26 @@ Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks
     (package-map-parse--allsecondarydefs-file pfile hashtable)))
 
 
-(defun package-map-parse--generatemap ()
-  "Generate a map of toplevel function and variable definitions in a project."
-  (let* ((proj-files (package-map-parse--getsourcefiles))
+(defun package-map-parse--shuffle (lst seed)
+  "Shuffle LST using SEED.  Not a true random shuffle, at all.
+Deterministic rotate and cut."
+  (let ((len-lst (length lst))
+        (sta-ind (mod seed (length lst))) ;; first element in list
+        (hlf-ind (/ (length lst) 2)))
+    (let* ((rotated (append (subseq lst sta-ind)
+                            (subseq lst 0 sta-ind)))
+           (revpack (reverse rotated))
+           (cutpack (append (subseq revpack hlf-ind)
+                            (subseq revpack 0 hlf-ind))))
+      cutpack)))
+
+
+(defun package-map-parse--generatemap (&optional seed)
+  "Generate a map of toplevel function and variable definitions in a project.
+Randomise `proj-files' using SEED (default 0)."
+  (let* ((proj-files (package-map-parse--shuffle
+                      (package-map-parse--getsourcefiles)
+                      (or seed 0)))
          (hash-table (package-map-parse--alltopdefs-filelist proj-files)))
     (package-map-parse--allsecondarydefs-filelist proj-files hash-table)
     hash-table))

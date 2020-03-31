@@ -41,10 +41,8 @@
 (defsubst package-map-secondhelp--generateregexfromalist (alist)
   "From ALIST, get the car variables and put them in a regex.
 This will be used to scan all files for top level definitions."
-  (concat "^(\\("
-          (mapconcat (lambda (x) (format "%s" (car x)))
-                     alist "\\|") "\\)"))
-
+  (concat "^(\\(cl-\\)?\\(" (mapconcat (lambda (x) (format "%s" (car x)))
+                             alist "\\|") "\\)"))
 
 (defun package-map-secondhelp--callingfuncatline (lnum file list-asc)
   "Retrieve the function name in LIST-ASC that LNUM bisects in FILE."
@@ -96,6 +94,7 @@ This will be used to scan all files for top level definitions."
               (if called-func
                   (push called-func mentionlst))))))
       (plist-put annotations :mentions mentionlst))))
+
 
 (provide 'package-map-secondhelp)
 ;;; package-map-secondhelp.el ends here

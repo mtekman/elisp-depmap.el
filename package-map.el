@@ -66,10 +66,10 @@
 
 
 ;;;###autoload
-(defun package-map-graphviz-digraph ()
-  "Make a dot file representation of all the top level definitions in a project, and their references.  Optionally set INDENT-WIDTH which is 2 by default."
+(defun package-map-graphviz-digraph (&optional shuffle)
+  "Make a dot file representation of all the top level definitions in a project, and their references.  Optionally set INDENT-WIDTH which is 2 by default. If SHUFFLE give a random seed (default 0) to shuffle subgraph cluster layouts."
   (interactive)
-  (let ((hashtable (package-map-parse--generatemap))
+  (let ((hashtable (package-map-parse--generatemap shuffle))
         (fn-decorate #'package-map-graph--decorate)
         (fn-digraph #'package-map-graph--makedigraphgroups)
         (fn-dicross #'package-map-graph--makedigraphcrossinglinks)

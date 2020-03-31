@@ -65,7 +65,6 @@
   :type 'alist
   :group 'package-map)
 
-
 (defun package-map-graph--decorate (keyword &optional indent)
   "Generate format string for KEYWORD from `package-map-graph-decorate'. If INDENT is nil, all properties are inlined into square brackets, otherwise each property is seperated by a newline followed by the INDENT amount in spaces."
   (let ((func-lay (lambda (x) (format "%s=%s" (car x) (cdr x))))
@@ -76,7 +75,6 @@
             (concat (mapconcat func-lay keyw-lst
                                (concat ";\n" inds-spc)) ";")
           (format "[%s]" (mapconcat func-lay keyw-lst ";"))))))
-
 
 (defun package-map-graph--filesuniq (hashtable)
   "Get the unique files in HASHTABLE."
