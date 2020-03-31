@@ -228,8 +228,8 @@ Decorate them using colors from FILEMAP and shapes from FUNCMAP.  Set indent by 
                             "\"%s\" -> \"%s\";\n"
                             oname
                             (elisp-depmap-graph--newname mento
-                                                        mento-file
-                                                        mento-symb))))))))))
+                                                         mento-file
+                                                         mento-symb))))))))))
      hashtable)))
 
 

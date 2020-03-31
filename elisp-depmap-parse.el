@@ -142,9 +142,9 @@ Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks
       (maphash   ;; iterate hashtable
        (lambda (vname annotations)
          (elisp-depmap-secondhelp--updatementionslist vname
-                                                     file
-                                                     annotations
-                                                     funcs-by-line-asc))
+                                                      file
+                                                      annotations
+                                                      funcs-by-line-asc))
        hashtable))))
 
 

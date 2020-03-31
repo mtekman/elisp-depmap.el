@@ -139,8 +139,8 @@ If SHUFFLE gives a random seed (default 0) to shuffle subgraph cluster layouts."
                      (insert (format "  \"%s\" -- \"%s\";\n"
                                      oname
                                      (elisp-depmap-graph--newname mento
-                                                                 mento-file
-                                                                 mento-symb)))))))))
+                                                                  mento-file
+                                                                  mento-symb)))))))))
          hashtable)
         (insert "}\n")
         (save-buffer)
