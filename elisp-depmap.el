@@ -1,9 +1,9 @@
-;;; package-map.el --- Generate a graphviz map of functions and definitions -*- lexical-binding: t; -*-
+;;; elisp-depmap.el --- Generate a graphviz map of functions and definitions -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
-;; URL: https://github.com/mtekman/remind-bindings.el
+;; URL: https://github.com/mtekman/elisp-depmap.el
 ;; Keywords: outlines
 ;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
@@ -29,20 +29,20 @@
 ;; More info at https://graphviz.org/doc/info/attrs.html
 
 ;;; Code:
-(require 'package-map-graph)
-(require 'package-map-exec)
+(require 'elisp-depmap-graph)
+(require 'elisp-depmap-exec)
 
 (require 'org-table)
 (require 'subr-x)
 
 ;;;###autoload
-(defun package-map-makesummarytable ()
+(defun elisp-depmap-makesummarytable ()
   "Make a summary org table of variables and references to them."
   (interactive)
-  (let ((hashtable (package-map-parse--generatemap)))
+  (let ((hashtable (elisp-depmap-parse--generatemap)))
     (with-current-buffer
         (find-file (format "%s.%s"
-                           (car (split-string package-map-exec-file "\\."))
+                           (car (split-string elisp-depmap-exec-file "\\."))
                            "org"))
       (erase-buffer)
       (insert "| Type | #Lines | Name | File | #Mentions | Mentions |\n|--\n")
@@ -67,24 +67,24 @@
 
 
 ;;;###autoload
-(defun package-map-graphviz-digraph (&optional shuffle)
+(defun elisp-depmap-graphviz-digraph (&optional shuffle)
   "Make a dot file representation of all definitions and references.
 Optionally set INDENT-WIDTH which is 2 by default.
 If SHUFFLE gives a random seed (default 0) to shuffle subgraph cluster layouts."
   (interactive)
-  (let ((hashtable (package-map-parse--generatemap shuffle))
-        (fn-decorate #'package-map-graph--decorate)
-        (fn-digraph #'package-map-graph--makedigraphgroups)
-        (fn-dicross #'package-map-graph--makedigraphcrossinglinks)
-        (fn-execshow #'package-map-exec--executeandshow)
-        (vr-funcmap package-map-parse-function-shapes)
-        (vr-indwidth package-map-graph-indentwidth))
-    (let ((filemap (package-map-graph--makefilemapcolors hashtable))
+  (let ((hashtable (elisp-depmap-parse--generatemap shuffle))
+        (fn-decorate #'elisp-depmap-graph--decorate)
+        (fn-digraph #'elisp-depmap-graph--makedigraphgroups)
+        (fn-dicross #'elisp-depmap-graph--makedigraphcrossinglinks)
+        (fn-execshow #'elisp-depmap-exec--executeandshow)
+        (vr-funcmap elisp-depmap-parse-function-shapes)
+        (vr-indwidth elisp-depmap-graph-indentwidth))
+    (let ((filemap (elisp-depmap-graph--makefilemapcolors hashtable))
           (ind-now (make-string vr-indwidth ? ))
           (decor-graph (funcall fn-decorate :graph))
           (decor-node (funcall fn-decorate :node))
           (decor-edge (funcall fn-decorate :edge)))
-      (with-current-buffer (find-file-noselect package-map-exec-file)
+      (with-current-buffer (find-file-noselect elisp-depmap-exec-file)
         (erase-buffer)
         (insert "digraph G {\n")
         (insert (format "%sgraph %s;\n" ind-now decor-graph))
@@ -100,13 +100,13 @@ If SHUFFLE gives a random seed (default 0) to shuffle subgraph cluster layouts."
 
 
 ;;;###autoload
-(defun package-map-graphviz ()
+(defun elisp-depmap-graphviz ()
   "Make a very basic dot file representation of all the top level definitions in a project, and their references."
   (interactive)
-  (let ((hashtable (package-map-parse--generatemap)))
-    (let ((filemap (package-map-graph--makefilemapcolors hashtable))
-          (funcmap package-map-parse-function-shapes))
-      (with-current-buffer (find-file-noselect package-map-exec-file)
+  (let ((hashtable (elisp-depmap-parse--generatemap)))
+    (let ((filemap (elisp-depmap-graph--makefilemapcolors hashtable))
+          (funcmap elisp-depmap-parse-function-shapes))
+      (with-current-buffer (find-file-noselect elisp-depmap-exec-file)
         (erase-buffer)
         (insert "strict graph {\n")
         (maphash
@@ -121,8 +121,8 @@ If SHUFFLE gives a random seed (default 0) to shuffle subgraph cluster layouts."
                     (filecolor (plist-get fileentry :color))
                     (filesymbl (plist-get fileentry :symbol))
                     (funcshape (alist-get (intern vtype) funcmap))
-                    (linemods (1+ (/ numlines package-map-graph-linemod)))
-                    (oname (package-map-graph--newname funcname vfile filesymbl)))
+                    (linemods (1+ (/ numlines elisp-depmap-graph-linemod)))
+                    (oname (elisp-depmap-graph--newname funcname vfile filesymbl)))
                (insert (format "  \"%s\" [shape=%s,color=%s,penwidth=%s]\n"
                                oname
                                funcshape
@@ -138,19 +138,19 @@ If SHUFFLE gives a random seed (default 0) to shuffle subgraph cluster layouts."
                           (mento-symb (plist-get mento-fileinfo :symbol)))
                      (insert (format "  \"%s\" -- \"%s\";\n"
                                      oname
-                                     (package-map-graph--newname mento
+                                     (elisp-depmap-graph--newname mento
                                                                  mento-file
                                                                  mento-symb)))))))))
          hashtable)
         (insert "}\n")
         (save-buffer)
-        (package-map-exec--executeandshow)))))
+        (elisp-depmap-exec--executeandshow)))))
 
 
 ;; TODO:
 ;;  * Implement arrows between clusters to show how
 ;;    the 'requires and 'provide work
 
-(provide 'package-map)
-;;; package-map.el ends here
+(provide 'elisp-depmap)
+;;; elisp-depmap.el ends here
 

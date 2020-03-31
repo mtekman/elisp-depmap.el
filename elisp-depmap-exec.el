@@ -1,9 +1,9 @@
-;;; package-map-exec.el --- Construct the DOT executable -*- lexical-binding: t; -*-
+;;; elisp-depmap-exec.el --- Construct the DOT executable -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
-;; URL: https://github.com/mtekman/remind-bindings.el
+;; URL: https://github.com/mtekman/elisp-depmap.el
 ;; Keywords: outlines
 ;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
@@ -22,41 +22,41 @@
 
 ;;; Commentary:
 
-;; See package-map.el
+;; See elisp-depmap.el
 
 ;;; Code:
-(defcustom package-map-exec-file "~/graphviz2.dot" ;
+(defcustom elisp-depmap-exec-file "~/graphviz2.dot" ;
   "Location of dot file.  The output image file will use the prefix before the extension."
   :type 'string
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defcustom package-map-exec-outext "png"
+(defcustom elisp-depmap-exec-outext "png"
   "Output file type."
   :type 'string
   :options '("png" "svg" "tiff" "jpeg" "eps" "json")
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defcustom package-map-exec-commandargs nil
+(defcustom elisp-depmap-exec-commandargs nil
   "Other command line args for dot executable."
   :type 'string
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defun package-map-exec--executeandshow ()
+(defun elisp-depmap-exec--executeandshow ()
   "Execute the dotfile command and then show the graph."
   (let* ((outfile (format "%s.%s"
-                          (car (split-string package-map-exec-file "\\."))
-                          package-map-exec-outext))
+                          (car (split-string elisp-depmap-exec-file "\\."))
+                          elisp-depmap-exec-outext))
          (command (combine-and-quote-strings
                    (list "dot"
-                         (shell-quote-argument (expand-file-name package-map-exec-file))
+                         (shell-quote-argument (expand-file-name elisp-depmap-exec-file))
                          "-T"
-                         (shell-quote-argument package-map-exec-outext)
-                         (or package-map-exec-commandargs "")
+                         (shell-quote-argument elisp-depmap-exec-outext)
+                         (or elisp-depmap-exec-commandargs "")
                          "-o"
                          (shell-quote-argument (expand-file-name outfile)))))
          (omesg (shell-command-to-string command)))
     (find-file-noselect outfile)
     `(,command . ,omesg)))
 
-(provide 'package-map-exec)
-;;; package-map-exec.el ends here
+(provide 'elisp-depmap-exec)
+;;; elisp-depmap-exec.el ends here

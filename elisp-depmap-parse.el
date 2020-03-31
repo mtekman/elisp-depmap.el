@@ -1,9 +1,9 @@
-;;; package-map-parse.el --- Construct a hashtable of top level definitions -*- lexical-binding: t; -*-
+;;; elisp-depmap-parse.el --- Construct a hashtable of top level definitions -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
-;; URL: https://github.com/mtekman/remind-bindings.el
+;; URL: https://github.com/mtekman/elisp-depmap.el
 ;; Keywords: outlines
 ;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
@@ -27,21 +27,21 @@
 
 
 ;;; Code:
-(require 'package-map-secondhelp)
+(require 'elisp-depmap-secondhelp)
 (require 'paren)
 
-(defcustom package-map-parse-function-shapes
+(defcustom elisp-depmap-parse-function-shapes
   '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium))
   "Define variables to look, and the graphviz shapes they should take."
   :type 'list
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defcustom package-map-parse-hashtablesize 50
+(defcustom elisp-depmap-parse-hashtablesize 50
   "Size of hash table.  50 by default."
   :type 'integer
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defun package-map-parse--getsourcefiles (&optional directory)
+(defun elisp-depmap-parse--getsourcefiles (&optional directory)
   "Find all source files from DIRECTORY, otherwise defer to `default-directory'."
   (let ((dir (or directory default-directory)))
     (--map (replace-regexp-in-string (format "^%s" dir) "" it)  ;; replace main directory
@@ -51,7 +51,7 @@
 
 ;; ;; -- Not sure if this needs to be used. It could be useful for checking
 ;; ;;    import loops.
-;; (defun package-map-parse--alltopdefs-file-requireprovide (file hashdefs)
+;; (defun elisp-depmap-parse--alltopdefs-file-requireprovide (file hashdefs)
 ;;   "Get all imports and package definitions from FILE and put into a HASHDEFS."
 ;;   (save-excursion
 ;;     (with-current-buffer (find-file-noselect file)
@@ -82,13 +82,13 @@
 ;;                      hashdefs)
 ;;           (error "Unable to find provides for file %s" file))))))
 
-(defun package-map-parse--alltopdefs-file (file hashdefs)
+(defun elisp-depmap-parse--alltopdefs-file (file hashdefs)
   "Get all top definitions in FILE and put into HASHDEFS.
 Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks are not reliable."
   (with-current-buffer (find-file-noselect file)
     (save-excursion
       (goto-char 0)
-      (let ((reg-type (package-map-secondhelp--generateregexfromalist package-map-parse-function-shapes)))
+      (let ((reg-type (elisp-depmap-secondhelp--generateregexfromalist elisp-depmap-parse-function-shapes)))
         ;;(reg-vnam "\\(-*\\w+\\)+"))
         (while (search-forward-regexp reg-type nil t)
           ;; Get type
@@ -122,39 +122,39 @@ Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks
         hashdefs))))
 
 
-(defun package-map-parse--alltopdefs-filelist (filelist)
+(defun elisp-depmap-parse--alltopdefs-filelist (filelist)
   "Get all top definitions from FILELIST and return a hashtable, with variable names as keys as well as type and bounds as values."
   (let ((hashtable (make-hash-table
-                    :size package-map-parse-hashtablesize
+                    :size elisp-depmap-parse-hashtablesize
                     :test #'equal)))
     (dolist (pfile filelist hashtable)
-      ;; (package-map-parse--alltopdefs-file-requireprovide pfile hashtable)
-      (package-map-parse--alltopdefs-file pfile hashtable))))
+      ;; (elisp-depmap-parse--alltopdefs-file-requireprovide pfile hashtable)
+      (elisp-depmap-parse--alltopdefs-file pfile hashtable))))
 
 
 
-(defun package-map-parse--allsecondarydefs-file (file hashtable)
+(defun elisp-depmap-parse--allsecondarydefs-file (file hashtable)
   "Get all secondary definitions in FILE for each of the top level definitions in HASHTABLE."
-  (let ((funcs-by-line-asc (package-map-secondhelp--makesortedlinelist
+  (let ((funcs-by-line-asc (elisp-depmap-secondhelp--makesortedlinelist
                             hashtable)))
     ;; -- Check each top def in the buffer
     (with-current-buffer (find-file-noselect file)
       (maphash   ;; iterate hashtable
        (lambda (vname annotations)
-         (package-map-secondhelp--updatementionslist vname
+         (elisp-depmap-secondhelp--updatementionslist vname
                                                      file
                                                      annotations
                                                      funcs-by-line-asc))
        hashtable))))
 
 
-(defun package-map-parse--allsecondarydefs-filelist (filelist hashtable)
+(defun elisp-depmap-parse--allsecondarydefs-filelist (filelist hashtable)
   "Get all secondary definitions for all files in FILELIST for the top level definitions in HASHTABLE."
   (dolist (pfile filelist hashtable)
-    (package-map-parse--allsecondarydefs-file pfile hashtable)))
+    (elisp-depmap-parse--allsecondarydefs-file pfile hashtable)))
 
 
-(defun package-map-parse--shuffle (lst seed)
+(defun elisp-depmap-parse--shuffle (lst seed)
   "Shuffle LST using SEED.  Not a true random shuffle, at all.
 Deterministic rotate and cut."
   (let ((sta-ind (mod seed (length lst))) ;; first element in list
@@ -167,15 +167,15 @@ Deterministic rotate and cut."
       cutpack)))
 
 
-(defun package-map-parse--generatemap (&optional seed)
+(defun elisp-depmap-parse--generatemap (&optional seed)
   "Generate a map of toplevel function and variable definitions in a project.
 Randomise `proj-files' using SEED (default 0)."
-  (let* ((proj-files (package-map-parse--shuffle
-                      (package-map-parse--getsourcefiles)
+  (let* ((proj-files (elisp-depmap-parse--shuffle
+                      (elisp-depmap-parse--getsourcefiles)
                       (or seed 0)))
-         (hash-table (package-map-parse--alltopdefs-filelist proj-files)))
-    (package-map-parse--allsecondarydefs-filelist proj-files hash-table)
+         (hash-table (elisp-depmap-parse--alltopdefs-filelist proj-files)))
+    (elisp-depmap-parse--allsecondarydefs-filelist proj-files hash-table)
     hash-table))
 
-(provide 'package-map-parse)
-;;; package-map-parse.el ends here
+(provide 'elisp-depmap-parse)
+;;; elisp-depmap-parse.el ends here

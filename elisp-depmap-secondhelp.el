@@ -1,9 +1,9 @@
-;;; package-map-secondhelp.el --- Helper functions for parse library -*- lexical-binding: t; -*-
+;;; elisp-depmap-secondhelp.el --- Helper functions for parse library -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
 ;; Author: Mehmet Tekman
-;; URL: https://github.com/mtekman/remind-bindings.el
+;; URL: https://github.com/mtekman/elisp-depmap.el
 ;; Keywords: outlines
 ;; Package-Requires: ((emacs "26.1"))
 ;; Version: 0.1
@@ -22,29 +22,29 @@
 
 ;;; Commentary:
 
-;; See package-map.el
+;; See elisp-depmap.el
 
 ;;; Code:
 (require 'cl-lib)
 (require 'dash)
 
-(defgroup package-map nil
-  "Main group for package-map package."
+(defgroup elisp-depmap nil
+  "Main group for elisp-depmap package."
   :group 'coding)
 
-(defcustom package-map-secondhelp-regexreferences
+(defcustom elisp-depmap-secondhelp-regexreferences
   "\\( \\|(\\|\\b\\|'\\)%s\\( \\|)\\|\\b\\)"
   "Regex to find references to a definition."
   :type 'string
-  :group 'package-map)
+  :group 'elisp-depmap)
 
-(defsubst package-map-secondhelp--generateregexfromalist (alist)
+(defsubst elisp-depmap-secondhelp--generateregexfromalist (alist)
   "From ALIST, get the car variables and put them in a regex.
 This will be used to scan all files for top level definitions."
   (concat "^(\\(cl-\\)?\\(" (mapconcat (lambda (x) (format "%s" (car x)))
                                        alist "\\|") "\\)"))
 
-(defun package-map-secondhelp--callingfuncatline (lnum file list-asc)
+(defun elisp-depmap-secondhelp--callingfuncatline (lnum file list-asc)
   "Retrieve the function name in LIST-ASC that LNUM bisects in FILE."
   (let ((func nil))
     (dolist (elm list-asc)
@@ -62,7 +62,7 @@ This will be used to scan all files for top level definitions."
             (error "Multiple functions at line... %d: %s" lnum func)
           (car func)))))
 
-(defun package-map-secondhelp--makesortedlinelist (hashtable)
+(defun elisp-depmap-secondhelp--makesortedlinelist (hashtable)
   "Make an ascending list of the start and end positions of all functions from HASHTABLE."
   (let ((funcsbylinenum nil))
     (maphash
@@ -76,9 +76,9 @@ This will be used to scan all files for top level definitions."
      hashtable)
     (--sort (< (car it) (car other)) funcsbylinenum)))
 
-(defun package-map-secondhelp--updatementionslist (vname file annotations funcs-by-line-asc)
+(defun elisp-depmap-secondhelp--updatementionslist (vname file annotations funcs-by-line-asc)
   "Update mentions list from ANNOTATIONS for variable VNAME by checking in ASCLIST of line numbers for function bounds in FILE."
-  (let ((vnam-regex (format package-map-secondhelp-regexreferences vname))
+  (let ((vnam-regex (format elisp-depmap-secondhelp-regexreferences vname))
         (mentionlst (plist-get annotations :mentions))
         (vnam-line (plist-get annotations :line-beg)))
     (save-excursion
@@ -87,7 +87,7 @@ This will be used to scan all files for top level definitions."
         (let ((lnum (line-number-at-pos)))
           (unless (eq lnum vnam-line)
             ;; skip the top level definition
-            (let ((called-func (package-map-secondhelp--callingfuncatline
+            (let ((called-func (elisp-depmap-secondhelp--callingfuncatline
                                 lnum
                                 file
                                 funcs-by-line-asc)))
@@ -96,5 +96,5 @@ This will be used to scan all files for top level definitions."
       (plist-put annotations :mentions mentionlst))))
 
 
-(provide 'package-map-secondhelp)
-;;; package-map-secondhelp.el ends here
+(provide 'elisp-depmap-secondhelp)
+;;; elisp-depmap-secondhelp.el ends here

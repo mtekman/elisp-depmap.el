@@ -1,4 +1,4 @@
-#+TITLE: package-map.el
+#+TITLE: elisp-depmap.el
 
 Generate a GraphViz-compatible DOT file representation of all the top-level definitions in an elisp project, and represent the connections between them.
 
@@ -9,11 +9,11 @@ The idea is that your code should be structured in an untangled way (i.e. split 
 ** Installation
 
    #+begin_src elisp
-     (use-package package-map
-       :bind (("C-c M-d" . package-map-graphviz-digraph)
-              ("C-c M-g" . package-map-graphviz)
-              ("C-c M-s" . package-map-makesummarytable))
-       :config ((package-map-exec-file "~/graphviz2.dot")))
+     (use-package elisp-depmap
+       :bind (("C-c M-d" . elisp-depmap-graphviz-digraph)
+              ("C-c M-g" . elisp-depmap-graphviz)
+              ("C-c M-s" . elisp-depmap-makesummarytable))
+       :config ((elisp-depmap-exec-file "~/graphviz2.dot")))
    #+end_src
 
 
@@ -21,15 +21,15 @@ The idea is that your code should be structured in an untangled way (i.e. split 
 
  Within an elisp package directory, run either
 
-  1. =package-map-graphviz= 
-    
+  1. =elisp-depmap-graphviz=
+
      Generates an undirected graph. Each node is a function coloured by file, and shaped by variable or function type (e.g. =setq=, =defvar=, =defcustom=, =defun=, =defsubst=, =defmacro=). Each edge indicates that a function is linked to another. Border width indicates the size of the function.
 
-  1. =package-map-graphviz-digraph= 
+  1. =elisp-depmap-graphviz-digraph=
 
      Generates a directed graph with clustered subgraphs, where functions from the same file are contained under the same subgraph, and an arrow from a source node/function to a target node/function indicates that the source node was called by the target.
 
-  1. =package-map-makesummarytable=.
+  1. =elisp-depmap-makesummarytable=.
 
      Generates a summary table of functions, variables and files - including the number of lines of a function and number of references.
 
@@ -39,13 +39,12 @@ The idea is that your code should be structured in an untangled way (i.e. split 
 
    | Variable Name                      | Type    | Default           | Info                                                                        |
    |------------------------------------+---------+-------------------+-----------------------------------------------------------------------------|
-   | =package-map-graph-stripprojectname= | boolean | =t=                 | Extract the file name from the prefix of the function.                      |
-   | =package-map-graph-linemod=          | integer | =10=                | Positive integer, scaling modifier for border width on function nodes.      |
-   | =package-map-parse-hashtablesize=    | integer | =50=                | Size of hashtable storing variables/functions. Increase for large projects. |
-   | =package-map-parse-function-shapes=  | alist   | (see file)        | Alist of variable and function types and [[https://www.graphviz.org/doc/info/shapes.html][Graphviz Shapes]].                   |
-   | =package-map-graph-decoratesubgraph= | alist   | (see file)        | Alist of subgraph properties. See [[https://graphviz.org/doc/info/attrs.html][Graphviz Attributes]].                      |
-   | =package-map-decoratedigraph=        | alist   | (see file)        | Alist of digraph properties. See [[https://graphviz.org/doc/info/attrs.html][Graphviz Attributes]].                       |
-   | =package-map-exec-file=              | string  | "~/graphviz2.dot" | Location of DOT file, Org (summary table) file, and Graphviz file.          |
-   | =package-map-exec-outext=            | string  | "png"             | Output Graphviz file type.                                                  |
-   | =package-map-exec-commandargs=       | string  | ""                | Extra command line arguments for running DOT.                               |
-
+   | =elisp-depmap-graph-stripprojectname= | boolean | =t=                 | Extract the file name from the prefix of the function.                      |
+   | =elisp-depmap-graph-linemod=          | integer | =10=                | Positive integer, scaling modifier for border width on function nodes.      |
+   | =elisp-depmap-parse-hashtablesize=    | integer | =50=                | Size of hashtable storing variables/functions. Increase for large projects. |
+   | =elisp-depmap-parse-function-shapes=  | alist   | (see file)        | Alist of variable and function types and [[https://www.graphviz.org/doc/info/shapes.html][Graphviz Shapes]].                   |
+   | =elisp-depmap-graph-decoratesubgraph= | alist   | (see file)        | Alist of subgraph properties. See [[https://graphviz.org/doc/info/attrs.html][Graphviz Attributes]].                      |
+   | =elisp-depmap-decoratedigraph=        | alist   | (see file)        | Alist of digraph properties. See [[https://graphviz.org/doc/info/attrs.html][Graphviz Attributes]].                       |
+   | =elisp-depmap-exec-file=              | string  | "~/graphviz2.dot" | Location of DOT file, Org (summary table) file, and Graphviz file.          |
+   | =elisp-depmap-exec-outext=            | string  | "png"             | Output Graphviz file type.                                                  |
+   | =elisp-depmap-exec-commandargs=       | string  | ""                | Extra command line arguments for running DOT.                               |
