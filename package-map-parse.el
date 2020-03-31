@@ -53,6 +53,8 @@
                           (not (string-match-p "\\#" it)))      ;; don't want temp
                      (directory-files-recursively dir ".*\\.el")))))
 
+;; ;; -- Not sure if this needs to be used. It could be useful for checking
+;; ;;    import loops.
 ;; (defun package-map-parse--alltopdefs-file-requireprovide (file hashdefs)
 ;;   "Get all imports and package definitions from FILE and put into a HASHDEFS."
 ;;   (save-excursion

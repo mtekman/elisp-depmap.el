@@ -56,11 +56,14 @@
   :type 'plist
   :group 'package-map)
 
-(defvar package-map-graph--colors-available
-  '(red blue darkgreen orange purple gray green yellow pink brown navy maroon violet))
-
-(defvar package-map-graph--symbols-available
-  '("ᚻ" "ᛉ" "ᛊ" "ᛋ" "ᛗ" "ᛝ" "ᛢ" "ᛪ" "ᛯ" "ᛸ" "ᛒ" "ᚷ" "ᚫ" "ᚣ" "ŧ" "Ω" "Æ" "þ"))
+(defcustom package-map-graph-filecolorsymbols
+  '((red . "ᚻ") (blue .  "ᛉ") (darkgreen . "ᛊ") (orange . "ᛋ") (purple . "ᛗ")
+    (gray . "ᛝ") (green . "ᛢ") (yellow . "ᛪ") (pink . "ᛯ") (brown . "ᛸ")
+    (navy . "ᛒ") (maroon . "ᚷ") (violet . "ᚫ") (brown . "ᚣ") (cornflowerblue . "ŧ")
+    (darkslategray4 . "Ω")(firebrick . "Æ") (goldenrod4 . "þ"))
+  "Alist of colors and symbols used to style and prefix files.  More colors can be found at the https://www.graphviz.org/doc/info/colors.html website."
+  :type 'alist
+  :group 'package-map)
 
 
 (defun package-map-graph--decorate (keyword &optional indent)
@@ -82,8 +85,8 @@
 
 (defun package-map-graph--makefilemapcolors (hashtable)
   "From the HASHTABLE make a plist of file, cluster no, and color for each file."
-  (let ((colors package-map-graph--colors-available)
-        (symbls package-map-graph--symbols-available)
+  (let ((colors (mapcar 'car package-map-graph-filecolorsymbols))
+        (symbls (mapcar 'cdr package-map-graph-filecolorsymbols))
         (files-uniq (package-map-graph--filesuniq hashtable)))
     (--map (let ((colr (nth it colors))
                  (file (nth it files-uniq))
@@ -108,13 +111,13 @@
 
 
 (defun package-map-graph--makesubsubgraph (hashtable funcmap entry subg ind)
-  "Make a sub subgraph for file ENTRY info using the SUBG keyword from `package-map-parse-subclustergroups' from HASHTABLE.  Use FUNCMAP for shapes, and use IND to set the indent number."
+  "Make a sub subgraph for file ENTRY info using the SUBG keyword from `package-map-graph-subclustergroups' from HASHTABLE.  Use FUNCMAP for shapes, and use IND to set the indent number."
   (let ((vfile (plist-get entry :file))
         (color (plist-get entry :color))
         (clust (plist-get entry :clust))
         (symbl (plist-get entry :symbol))
         (nex-ind (+ ind package-map-graph-indentwidth))
-        (vr-subclust package-map-parse-subclustergroups)
+        (vr-subclust package-map-graph-subclustergroups)
         (vr-linemods package-map-graph-linemod)
         (fn-graphdec #'package-map-graph--decorate)
         (fn-newnames #'package-map-graph--newname))
@@ -158,7 +161,7 @@ Decorate them using colors from FILEMAP and shapes from FUNCMAP.  Set indent by 
             (fn-subgraph #'package-map-graph--makesubsubgraph)
             (fn-decorate #'package-map-graph--decorate)
             (vr-striproj package-map-graph-stripprojectname)
-            (vr-subclust package-map-parse-subclustergroups))
+            (vr-subclust package-map-graph-subclustergroups))
         (let ((subg-keys  ;; Not how plists are meant to be used...
                (--filter (string-prefix-p ":" (format "%s" it)) vr-subclust))
               (color (plist-get entry :color))
