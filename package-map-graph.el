@@ -42,6 +42,15 @@
   '((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
   "Attributes to decorate subgraph with."
   :type 'alist
+(defcustom package-map-graph-decorate
+  '(:graph
+    ((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))
+    :subgraph
+    ((style . rounded) (bgcolor . transparent) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
+    :subsubgraph
+    ((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\"")))
+  "Attributes to give to the main :graph, the :subgraph (file clusters), and the :subsubgraph (groups defined by `package-map-parse-subclustergroups')."
+  :type 'plist
   :group 'package-map)
 
 (defvar package-map-graph--colors-available
@@ -49,6 +58,18 @@
 
 (defvar package-map-graph--symbols-available
   '("ᚻ" "ᛉ" "ᛊ" "ᛋ" "ᛗ" "ᛝ" "ᛢ" "ᛪ" "ᛯ" "ᛸ" "ᛒ" "ᚷ" "ᚫ" "ᚣ" "ŧ" "Ω" "Æ" "þ"))
+
+
+(defun package-map-graph--decorate (keyword &optional indent)
+  "Generate format string for KEYWORD from `package-map-graph-decorate'. If INDENT is nil, all properties are inlined into square brackets, otherwise each property is seperated by a newline followed by the INDENT amount in spaces."
+  (let ((func-lay (lambda (x) (format "%s=%s" (car x) (cdr x))))
+        (keyw-lst (plist-get package-map-graph-decorate keyword))
+        (inds-spc (if indent (make-string indent ? ) "")))
+    (if indent
+        (concat (mapconcat func-lay keyw-lst
+                           (concat ";\n" inds-spc)) ";")
+      (format "[%s]" (mapconcat func-lay keyw-lst ";")))))
+
 
 (defun package-map-graph--filesuniq (hashtable)
   "Get the unique files in HASHTABLE."
