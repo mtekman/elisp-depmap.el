@@ -31,8 +31,9 @@
 (require 'paren)
 
 (defcustom elisp-depmap-parse-function-shapes
-  '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium))
-  "Define variables to look, and the graphviz shapes they should take."
+  '((setq . underline) (defvar . underline) (defcustom . plain) (defun . tab) (defsubst . component) (defmacro . trapezium) (defgeneric . trapezium) (defmethod . trapezium))
+  "Define variables to look, and the graphviz shapes they should take.
+More info at the https://graphviz.org/doc/info/attrs.html website."
   :type 'list
   :group 'elisp-depmap)
 

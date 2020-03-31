@@ -1,4 +1,4 @@
-;;; elisp-depmap.el --- Generate a graphviz map of functions and definitions -*- lexical-binding: t; -*-
+;;; elisp-depmap.el --- Generate an elisp dependency map in graphviz -*- lexical-binding: t; -*-
 
 ;; Copright (C) 2020 Mehmet Tekman <mtekman89@gmail.com>
 
@@ -23,10 +23,8 @@
 ;;; Commentary:
 
 ;; This package generates a graphviz DOT map of all the functions and variables
-;; in a given elisp package.  The aim is to help developers see how tangled their
+;; in a given elisp project.  The aim is to help developers see how tangled their
 ;; code is and to help them refactor it.
-;;
-;; More info at https://graphviz.org/doc/info/attrs.html
 
 ;;; Code:
 (require 'elisp-depmap-graph)
