@@ -35,20 +35,6 @@
 (require 'org-table)
 (require 'subr-x)
 
-(defcustom package-map-decoratedigraph
-  '((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))
-  "Attributes to decorate subgraph with."
-  :type 'alist
-  :group 'package-map)
-
-
-(defun package-map--decorate-digraph ()
-  "Generate format string for `package-map--decoratedigraph'."
-  (format "[%s]" (mapconcat
-                  (lambda (x) (format "%s=%s" (car x) (cdr x)))
-                  package-map-decoratedigraph ";")))
-
-
 ;;;###autoload
 (defun package-map-makesummarytable ()
   "Make a summary org table of variables and references to them."

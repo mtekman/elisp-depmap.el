@@ -36,6 +36,10 @@
   :type 'list
   :group 'package-map)
 
+(defcustom package-map-parse-subclustergroups
+  '(:variables (setq defvar defcustom) :functions (defun defsubst defmacro))
+  "Define subcluster groups and the which symbols should be assigned to them.  By default we only have variables and functions, though any number of groups can be defined. It is not necessary to use all symbols from `package-map-parse-function-shapes'.")
+
 (defcustom package-map-parse-hashtablesize 50
   "Size of hash table.  50 by default."
   :type 'integer

@@ -102,95 +102,127 @@
              package-map-graph-decoratesubgraph
              "\n"))
 
-(defun package-map-graph--makedigraphgroups (hashtable filemap funcmap &optional noclust)
-  "Make digraph subgraphs for each file cluster, using files from HASHTABLE.
-Decorate them using colors from FILEMAP and shapes from FUNCMAP.
-If NOCLUST, do not cluster functions from the same file."
-  (dolist (vfile (--map (plist-get it :file) filemap))
-    (let* ((entry (--first (string= (plist-get it :file) vfile) filemap))
-           (color (plist-get entry :color))
-           (clust (plist-get entry :clust))
-           (symbl (plist-get entry :symbol)))
-      (insert (format "  subgraph %s {\n" (if noclust
-                                              (format "\"%s\"" vfile)
-                                            clust))
-              (format "%s\n" (package-map-graph--decorate-subgraph))
-              (format "      label = \"%s\";\n" (if package-map-graph-stripprojectname
-                                                    (format "[%s] %s" symbl vfile)
-                                                  vfile))
-              (format "      edge [color=%s];\n" color)
-              (format "      node [color=%s];\n" color))
-      ;; First pass define nodes
-      (let ((customs '("rank = same")))
-        (maphash
-         (lambda (funcname info)
-           ;; Only process functions from VFILE
-           (if (string= (plist-get info :file) vfile)
-               (let ((oname (package-map-graph--newname funcname vfile symbl))
-                     (vbegs (plist-get info :line-beg))
-                     (vends (plist-get info :line-end))
-                     (vtype (plist-get info :type)))
-                 (if (string= "defcustom" vtype)
-                     ;; Store customs to use as same rank later
-                     (cl-pushnew (format "\"%s\"" oname) customs))
-                 (let ((numlines (if vends (- vends vbegs) 1)))
-                   (insert (format "      node [shape=%s,penwidth=%s] \"%s\";\n"
-                                   (alist-get (intern vtype) funcmap)
-                                   (1+ (/ numlines package-map-graph-linemod))
-                                   oname))))))
-         hashtable))
-      ;; Rank all customs at the top -- looks ugly, leave it.
-      ;; (insert (format "      {%s;}\n" (mapconcat 'identity
-      ;;                                            (reverse customs) ";"))))
-      ;; Second pass define intrafile links
+
+(defun package-map-graph--makesubsubgraph (hashtable funcmap entry subg ind)
+  "Make a sub subgraph for file ENTRY info using the SUBG keyword from `package-map-parse-subclustergroups' from HASHTABLE.  Use FUNCMAP for shapes, and use IND to set the indent number."
+  (let ((vfile (plist-get entry :file))
+        (color (plist-get entry :color))
+        (clust (plist-get entry :clust))
+        (symbl (plist-get entry :symbol))
+        (nex-ind (+ ind package-map-graph-indentwidth))
+        (vr-subclust package-map-parse-subclustergroups)
+        (vr-linemods package-map-graph-linemod)
+        (fn-graphdec #'package-map-graph--decorate)
+        (fn-newnames #'package-map-graph--newname))
+    (let ((accepted-stypes (--map (format "%s" it) (plist-get vr-subclust subg)))
+          (clust-keyword (concat
+                          clust (string-remove-prefix ":" (format "%s" subg))))
+          (ind-now (make-string ind ? ))
+          (ind-nex (make-string nex-ind ? )))      
+      (insert "\n"
+              ind-now (format "subgraph %s {\n" clust-keyword)
+              ind-nex (format "label = \"%s\";\n" subg)
+              ind-nex (funcall fn-graphdec :subsubgraph nex-ind) "\n")
       (maphash
        (lambda (funcname info)
          ;; Only process functions from VFILE
-         (let ((oname (package-map-graph--newname funcname vfile symbl))
-               (vment (plist-get info :mentions)))
-           (if (eq (plist-get info :file) vfile)
-               (dolist (mento vment)
-                 (unless (eq funcname mento)
-                   (let* ((mento-info (gethash mento hashtable))
-                          (mento-file (plist-get mento-info :file)))
-                     ;; If functions are from the same file,
-                     ;; list them here.
-                     (if (string= vfile mento-file)
-                         (insert (format "      \"%s\" -> \"%s\";\n"
-                                         oname
-                                         (package-map-graph--newname mento
-                                                                     vfile
-                                                                     symbl))))))))))
-       hashtable))
-    (insert "  }\n")))
+         (if (string= (plist-get info :file) vfile)
+             (let ((oname (funcall fn-newnames funcname vfile symbl))
+                   (vbegs (plist-get info :line-beg))
+                   (vends (plist-get info :line-end))
+                   (vtype (plist-get info :type)))
+               (if (member vtype accepted-stypes)
+                   (let ((numlines (if vends (- vends vbegs) 1)))
+                     (insert ind-nex
+                             (format
+                              "node [shape=%s,penwidth=%s] \"%s\";\n"
+                              (alist-get (intern vtype) funcmap)
+                              (1+ (/ vr-linemods)) oname)))))))
+       hashtable)
+      (insert ind-now "}\n"))))
+
+(defun package-map-graph--makedigraphgroups (hashtable filemap funcmap ind)
+  "Make digraph subgraphs for each file cluster, using files from HASHTABLE.
+Decorate them using colors from FILEMAP and shapes from FUNCMAP.  Set indent by IND amount."
+  (let* ((next-ind (+ ind package-map-graph-indentwidth))
+         (ind-prev (make-string ind ? ))
+         (ind-next (make-string next-ind ? )))
+    (dolist (vfile (--map (plist-get it :file) filemap))
+      (let ((entry (--first (string= (plist-get it :file) vfile) filemap))
+            (fn-newnames #'package-map-graph--newname)
+            (fn-subgraph #'package-map-graph--makesubsubgraph)
+            (fn-decorate #'package-map-graph--decorate)
+            (vr-striproj package-map-graph-stripprojectname)
+            (vr-subclust package-map-parse-subclustergroups))
+        (let ((subg-keys  ;; Not how plists are meant to be used...
+               (--filter (string-prefix-p ":" (format "%s" it)) vr-subclust))
+              (color (plist-get entry :color))
+              (symbl (plist-get entry :symbol))
+              (clust (plist-get entry :clust)))
+          (insert "\n"
+                  ind-prev (format "subgraph %s {\n" clust)
+                  ind-next (funcall fn-decorate :subgraph next-ind) "\n"
+                  ind-next (format "label = \"%s\";\n"
+                                   (if vr-striproj
+                                       (format "[%s] %s" symbl vfile) vfile))
+                  ind-next (format "edge [color=%s];\n" color)
+                  ind-next (format "node [color=%s];\n" color))
+          ;; First pass define nodes
+          ;; - Create subsubgraphs based on keys in `vr-subclust'.
+          (dolist (subg subg-keys)
+            (funcall fn-subgraph hashtable funcmap entry subg next-ind))
+          ;;
+          ;; Second pass define intrafile links
+          (maphash
+           (lambda (funcname info)
+             ;; Only process functions from VFILE
+             (let ((oname (funcall fn-newnames funcname vfile symbl))
+                   (vment (plist-get info :mentions)))
+               (if (eq (plist-get info :file) vfile)
+                   (dolist (mento vment)
+                     (unless (eq funcname mento)
+                       (let* ((mento-info (gethash mento hashtable))
+                              (mento-file (plist-get mento-info :file)))
+                         ;; Only use functions are from the same file
+                         (if (string= vfile mento-file)
+                             (insert
+                              ind-next (format
+                                        "\"%s\" -> \"%s\";\n"
+                                        oname
+                                        (funcall fn-newnames
+                                                 mento vfile symbl))))))))))
+           hashtable)
+          (insert ind-prev "}\n"))))))
 
 
-(defun package-map-graph--makedigraphcrossinglinks (hashtable filemap)
-  "Make the digraph connections across clusters, using functions from HASHTABLE, and FILEMAP info."
-  (maphash
-   (lambda (funcname info)
-     (let ((vfile (plist-get info :file))
-           (vment (plist-get info :mentions)))
-       (let* ((ventry (--first (string= (plist-get it :file) vfile) filemap))
-              (vsymbl (plist-get ventry :symbol))
-              (oname (package-map-graph--newname funcname vfile vsymbl)))
-         (dolist (mento vment)
-           (unless (eq funcname mento)
-             (let* ((mento-info (gethash mento hashtable))
-                    (mento-file (plist-get mento-info :file))
-                    (mento-entr (--first (string= (plist-get it :file) mento-file)
-                                         filemap))
-                    (mento-symb (plist-get mento-entr :symbol)))
-               ;; If functions are NOT from the same file,
-               ;; list them here.
-               (unless (string= vfile mento-file)
-                 (insert (format
-                          "  \"%s\" -> \"%s\";\n"
-                          oname
-                          (package-map-graph--newname mento
-                                                      mento-file
-                                                      mento-symb))))))))))
-   hashtable))
+(defun package-map-graph--makedigraphcrossinglinks (hashtable filemap ind)
+  "Make the digraph connections across clusters, using functions from HASHTABLE, and FILEMAP info. Indent by IND amount."
+  (let ((indent (make-string ind ? )))
+    (maphash
+     (lambda (funcname info)
+       (let ((vfile (plist-get info :file))
+             (vment (plist-get info :mentions)))
+         (let* ((ventry (--first (string= (plist-get it :file) vfile) filemap))
+                (vsymbl (plist-get ventry :symbol))
+                (oname (package-map-graph--newname funcname vfile vsymbl)))
+           (dolist (mento vment)
+             (unless (eq funcname mento)
+               (let* ((mento-info (gethash mento hashtable))
+                      (mento-file (plist-get mento-info :file))
+                      (mento-entr (--first (string= (plist-get it :file) mento-file)
+                                           filemap))
+                      (mento-symb (plist-get mento-entr :symbol)))
+                 ;; If functions are NOT from the same file,
+                 ;; list them here.
+                 (unless (string= vfile mento-file)
+                   (insert indent
+                           (format
+                            "  \"%s\" -> \"%s\";\n"
+                            oname
+                            (package-map-graph--newname mento
+                                                        mento-file
+                                                        mento-symb))))))))))
+     hashtable)))
 
 
 (provide 'package-map-graph)
