@@ -128,8 +128,9 @@ Don't use `grep' or `projectile-ripgrep', because those sonuvabitch finish hooks
                     :size package-map-parse-hashtablesize
                     :test #'equal)))
     (dolist (pfile filelist hashtable)
+      ;; (package-map-parse--alltopdefs-file-requireprovide pfile hashtable)
       (package-map-parse--alltopdefs-file pfile hashtable))))
-      ;;(package-map-parse--alltopdefs-file-requireprovide pfile hashtable)
+
 
 
 (defun package-map-parse--allsecondarydefs-file (file hashtable)
