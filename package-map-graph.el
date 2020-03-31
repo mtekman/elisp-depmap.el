@@ -119,7 +119,7 @@
           (clust-keyword (concat
                           clust (string-remove-prefix ":" (format "%s" subg))))
           (ind-now (make-string ind ? ))
-          (ind-nex (make-string nex-ind ? )))      
+          (ind-nex (make-string nex-ind ? )))
       (insert "\n"
               ind-now (format "subgraph %s {\n" clust-keyword)
               ind-nex (format "label = \"%s\";\n" subg)
@@ -138,7 +138,8 @@
                              (format
                               "node [shape=%s,penwidth=%s] \"%s\";\n"
                               (alist-get (intern vtype) funcmap)
-                              (1+ (/ vr-linemods)) oname)))))))
+                              (1+ (/ numlines vr-linemods))
+                              oname)))))))
        hashtable)
       (insert ind-now "}\n"))))
 
@@ -218,7 +219,7 @@ Decorate them using colors from FILEMAP and shapes from FUNCMAP.  Set indent by 
                  (unless (string= vfile mento-file)
                    (insert indent
                            (format
-                            "  \"%s\" -> \"%s\";\n"
+                            "\"%s\" -> \"%s\";\n"
                             oname
                             (package-map-graph--newname mento
                                                         mento-file

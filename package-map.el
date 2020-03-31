@@ -82,15 +82,17 @@
         (erase-buffer)
         (insert "digraph G {\n")
         (insert indent (format "graph %s;\n" (funcall fn-decorate :graph)))
+        ;; --{external inserts}--
         (funcall fn-digraph hashtable filemap vr-funcmap vr-indwidth)
         (funcall fn-dicross hashtable filemap vr-indwidth)
+        ;; --
         (insert "}\n")
         (save-buffer)
         (funcall fn-execshow)))))
 
 ;;;###autoload
 (defun package-map-graphviz ()
-  "Make a dot file representation of all the top level definitions in a project, and their references."
+  "Make a very basic dot file representation of all the top level definitions in a project, and their references."
   (interactive)
   (let ((hashtable (package-map-parse--generatemap)))
     (let ((filemap (package-map-graph--makefilemapcolors hashtable))
