@@ -44,13 +44,15 @@
   :group 'package-map)
 
 (defcustom package-map-graph-decorate
-  '(:graph
-    ((penwidth . 3) (pencolor . black) (bgcolor . grey) (style . rounded) (splines . ortho))
+  '(:edge
+    ((style . tapered))
+    :graph
+    ((style . rounded) (bgcolor . white) (labelfloat . true) (penwidth . 3) (pencolor . black) (splines . ortho) (rankdir . TB))
     :subgraph
-    ((style . rounded) (bgcolor . transparent) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\""))
+    ((bgcolor . grey70) (fontcolor . black) (fontsize . 25.0) (fontname . "\"times bold\""))
     :subsubgraph
-    ((style . rounded) (bgcolor . white) (fontsize . 25.0) (labelfloat . true) (fontname . "\"times bold\"")))
-  "Attributes to give to the main :graph, the :subgraph (file clusters), and the :subsubgraph (groups defined by `package-map-parse-subclustergroups')."
+    ((bgcolor . white) (fontcolor . black) (fontsize . 12.0) (margin . 10)))
+  "Attributes to give to the main :edge, :node, :graph, the :subgraph (file clusters), and the nested clusters :subsubgraph (groups defined by `package-map-parse-subclustergroups')."
   :type 'plist
   :group 'package-map)
 
@@ -66,10 +68,11 @@
   (let ((func-lay (lambda (x) (format "%s=%s" (car x) (cdr x))))
         (keyw-lst (plist-get package-map-graph-decorate keyword))
         (inds-spc (if indent (make-string indent ? ) "")))
-    (if indent
-        (concat (mapconcat func-lay keyw-lst
-                           (concat ";\n" inds-spc)) ";")
-      (format "[%s]" (mapconcat func-lay keyw-lst ";")))))
+    (if keyw-lst
+        (if indent
+            (concat (mapconcat func-lay keyw-lst
+                               (concat ";\n" inds-spc)) ";")
+          (format "[%s]" (mapconcat func-lay keyw-lst ";"))))))
 
 
 (defun package-map-graph--filesuniq (hashtable)
