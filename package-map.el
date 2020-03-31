@@ -62,7 +62,8 @@
                            (length vment)
                            vment))))
        hashtable)
-      (org-table-align))))
+      (org-table-align)
+      (save-buffer))))
 
 
 ;;;###autoload
@@ -94,6 +95,7 @@
         (insert "}\n")
         (save-buffer)
         (funcall fn-execshow)))))
+
 
 ;;;###autoload
 (defun package-map-graphviz ()
