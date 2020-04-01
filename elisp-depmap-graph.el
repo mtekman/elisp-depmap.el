@@ -69,7 +69,7 @@
   '(:variables (setq defvar defcustom) :functions (defun defsubst defmacro))
   "Define subcluster groups and the which symbols should be assigned to them.
 By default we only have variables and functions, though any number of groups can be defined.  It is not necessary to use all symbols from the `elisp-depmap-parse-function-shapes' variable."
-  :type 'list
+  :type 'plist
   :group 'elisp-depmap)
 
 
