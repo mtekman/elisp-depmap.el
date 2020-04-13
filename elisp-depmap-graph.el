@@ -92,8 +92,8 @@ If INDENT is nil, all properties are inlined into square brackets, otherwise eac
 
 (defun elisp-depmap-graph--makefilemapcolors (hashtable)
   "From the HASHTABLE make a plist of file, cluster no, and color for each file."
-  (let ((colors (mapcar 'car elisp-depmap-graph-filecolorsymbols))
-        (symbls (mapcar 'cdr elisp-depmap-graph-filecolorsymbols))
+  (let ((colors (mapcar #'car elisp-depmap-graph-filecolorsymbols))
+        (symbls (mapcar #'cdr elisp-depmap-graph-filecolorsymbols))
         (files-uniq (elisp-depmap-graph--filesuniq hashtable)))
     (--map (let ((colr (nth it colors))
                  (file (nth it files-uniq))
