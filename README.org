@@ -1,5 +1,9 @@
 #+TITLE: elisp-depmap.el
 
+*** This repo has migrated to GitLab
+https://gitlab.com/mtekman/elisp-depmap.el
+****** (The copy here is archived. Please see the above link for the latest developments)
+
 A library to generate a dependency map for elisp projects.
 
 Generates a GraphViz-compatible DOT file representation of all the top-level definitions in an elisp project, and represents the connections between them.
