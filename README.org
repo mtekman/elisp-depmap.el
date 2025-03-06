@@ -1,9 +1,5 @@
 #+TITLE: elisp-depmap.el
 
-*** This repo has migrated to GitLab
-https://gitlab.com/mtekman/elisp-depmap.el
-****** (The copy here is archived. Please see the above link for the latest developments)
-
 A library to generate a dependency map for elisp projects.
 
 Generates a GraphViz-compatible DOT file representation of all the top-level definitions in an elisp project, and represents the connections between them.
@@ -13,6 +9,8 @@ The idea is that your code should be structured in an untangled way (i.e. split 
  #+HTML: <img src="https://user-images.githubusercontent.com/20641402/78084816-7f4b3280-73b9-11ea-9b06-9db7fc52ee2c.png" />
 
 ** Installation
+
+   Install =graphviz= on your machine, then in your email config set:
 
    #+begin_src elisp
      (use-package elisp-depmap
